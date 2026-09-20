@@ -17,8 +17,8 @@ LeoKit 開發容器就緒。
 
   web     ： cd web && npm run build && npm test
   android ： cd android && ./gradlew :leokit:assembleRelease :leokit:test
-  apple   ： swift package describe        # 只驗證 manifest
-             swiftc -parse apple/Sources/LeoKit/**/*.swift
+  ios     ： swift package describe        # 只驗證 manifest
+             swiftc -parse ios/Sources/LeoKit/**/*.swift
              真正的編譯要在 macOS + Xcode，容器內沒有 SwiftUI。
 
   改 token： 編輯 tokens/tokens.json，然後 node tokens/generate.mjs

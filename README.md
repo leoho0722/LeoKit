@@ -13,7 +13,7 @@ LeoKit/
 │   ├── tokens.json        設計 token，與 Design System artifact 同步
 │   ├── platform-map.json  字級對 iOS / Android 原生字級的對應
 │   └── generate.mjs       產生四份 token 檔
-├── apple/                 SwiftUI
+├── ios/                   SwiftUI
 ├── android/               Compose + Material 3
 ├── web/                   npm 套件，無框架依賴的 DOM 工廠
 └── .devcontainer/         Node + JDK + Android SDK + Swift 的開發容器
@@ -25,7 +25,7 @@ LeoKit/
 
 | 產出 | 內容 |
 | --- | --- |
-| `apple/Sources/LeoKit/Tokens/LK<型別>.generated.swift` | 一型別一檔：`LKColorValues`（原始值）、`LKColor`、`LKSpacing`、`LKRadius`、`LKSize`、`LKOpacity`、`LKFont` |
+| `ios/Sources/LeoKit/Tokens/LK<型別>.generated.swift` | 一型別一檔：`LKColorValues`（原始值）、`LKColor`、`LKSpacing`、`LKRadius`、`LKSize`、`LKOpacity`、`LKFont` |
 | `android/.../tokens/LK<主題>.generated.kt` | 依 Kotlin 慣例分三檔：`LKColorScheme`（含淺色／深色 scheme）、`LKMetrics`（`LKSpacing`、`LKRadius`、`LKSize`、`LKOpacity`）、`LKTypography` |
 | `web/src/tokens.generated.css` | CSS 自訂屬性與字級 class |
 | `web/src/tokens.generated.ts` | 型別化的 token 物件 |
@@ -73,13 +73,13 @@ Tip 的規則欄位（`id`、`maxDisplays`）三端刻意一致，這樣「哪�
 # VS Code：Reopen in Container
 cd web     && npm run build && npm test
 cd android && ./gradlew :leokit:assembleRelease :leokit:test
-swift package describe          # Apple：只驗證 manifest
+swift package describe          # iOS：只驗證 manifest
 ```
 
-**Apple 的套件無法在 Linux 容器內編譯**：它用 SwiftUI，而 Linux 上沒有 SwiftUI。
+**iOS 的套件無法在 Linux 容器內編譯**：它用 SwiftUI，而 Linux 上沒有 SwiftUI。
 容器內能做的是 `swift package describe`（驗證 manifest 與來源路徑）與 `swiftc -parse`（語法檢查）；
 真正的 build 與測試要在 macOS + Xcode，CI 裡跑在 `macos-26` runner 上。
-在 Mac 上要用 `xcodebuild` 指定 iOS destination，不能用 `swift build`（理由見 `apple/README.md`）。
+在 Mac 上要用 `xcodebuild` 指定 iOS destination，不能用 `swift build`（理由見 `ios/README.md`）。
 
 ## 安裝
 

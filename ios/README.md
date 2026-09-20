@@ -1,4 +1,4 @@
-# LeoKit — Apple
+# LeoKit — iOS
 
 `Package.swift` 在 repo 根目錄，不在這個資料夾裡：SwiftPM 不支援從 git URL 解析子目錄裡的套件，
 manifest 必須在根目錄。這裡只放原始碼，manifest 的 `path` 指過來。
@@ -40,7 +40,7 @@ struct SubscriptionRow: View {
 
 ```bash
 swift package describe
-swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
+swiftc -parse ios/Sources/LeoKit/Tokens/*.swift
 ```
 
 在 Mac 上也**不要用 `swift build`**：它一律編給 host，也就是 macOS，

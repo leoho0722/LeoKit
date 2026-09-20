@@ -6,7 +6,7 @@
 
 LeoKit 是一套跨平台設計系統元件庫，提供三種原生實作：
 
-- `apple/`：SwiftUI，套件 manifest 位於根目錄的 `Package.swift`。
+- `ios/`：SwiftUI，套件 manifest 位於根目錄的 `Package.swift`。
 - `android/`：Compose + Material 3。
 - `web/`：Node.js / TypeScript，無框架依賴的 DOM 工廠函式。
 - `tokens/`：設計 token 的唯一真實來源與產生器。
@@ -15,7 +15,7 @@ LeoKit 是一套跨平台設計系統元件庫，提供三種原生實作：
 
 設計系統定義的元件三端都已實作，新增元件等於三端都要補。`README.md` 的元件對照表記錄了刻意的形狀差異（Toggle、SegmentedControl、Dialog、AppBar、Toast、Tip、Combobox、Radio），改動任一端之前先查那張表，不要把刻意的差異當成 bug 修掉。
 
-SwiftPM 無法從 git URL 解析子目錄裡的套件，所以 `Package.swift` 必須放在 repository 根目錄；原始碼仍在 `apple/`，由 target 的 `path` 指過去。兩者是同一個套件，不是兩套設定。
+SwiftPM 無法從 git URL 解析子目錄裡的套件，所以 `Package.swift` 必須放在 repository 根目錄；原始碼仍在 `ios/`，由 target 的 `path` 指過去。兩者是同一個套件，不是兩套設定。
 
 ## Token 與產生檔
 
@@ -27,7 +27,7 @@ node tokens/generate.mjs
 
 產生器會更新下列檔案：
 
-- `apple/Sources/LeoKit/Tokens/*.generated.swift`
+- `ios/Sources/LeoKit/Tokens/*.generated.swift`
 - `android/leokit/src/main/kotlin/io/github/leoho0722/leokit/tokens/*.generated.kt`
 - `web/src/tokens.generated.css`
 - `web/src/tokens.generated.ts`
@@ -44,7 +44,7 @@ node tokens/generate.mjs
 
 ### 產生檔與手寫檔的分界
 
-- Apple：`LKColorValues.generated.swift` 是主題原始值表，`LKColor.generated.swift` 是畫面用的動態色；把原始值轉成動態 `Color` 的邏輯在手寫的 `LKColorValue.swift`，`LKShape.swift` 則把產生的 `LKRadius` 數值包成 continuous 的 `RoundedRectangle`。
+- iOS：`LKColorValues.generated.swift` 是主題原始值表，`LKColor.generated.swift` 是畫面用的動態色；把原始值轉成動態 `Color` 的邏輯在手寫的 `LKColorValue.swift`，`LKShape.swift` 則把產生的 `LKRadius` 數值包成 continuous 的 `RoundedRectangle`。
 - Android：產生 `LKColorScheme`、`LKMetrics`、`LKTypography` 三個檔；手寫的 `LKTheme.kt` 把它們組成主題，元件一律透過 `LKTheme.colors`／`.typography`／`.shapes` 取用，不要直接引用產生檔。
 - Web：`tokens.generated.css` 提供自訂屬性與字級 class，手寫的 `leokit.css` 只消費這些變數、不寫死任何色值；`tokens.generated.ts` 是同一份資料的 TypeScript 型別化版本。
 
@@ -55,21 +55,21 @@ node tokens/generate.mjs
 1. 改 `tokens/tokens.json`。
 2. 新增或調整字級時一併補 `tokens/platform-map.json`。
 3. 從 repository 根目錄執行 `node tokens/generate.mjs`。
-4. 更新三端 token 測試的預期值：`apple/Tests/LeoKitTests/LKTokensTests.swift`、`android/leokit/src/test/kotlin/io/github/leoho0722/leokit/LKTokensTest.kt`、`web/test/tokens.test.mjs`。三份測的是同一組承諾：產生器沒把值弄壞，以及設計系統承諾的對比度在該平台仍成立。預期值是寫死的字面量（例如 `0x1E5FCC`），所以動到色彩 token 時三端通常要一起改。
+4. 更新三端 token 測試的預期值：`ios/Tests/LeoKitTests/LKTokensTests.swift`、`android/leokit/src/test/kotlin/io/github/leoho0722/leokit/LKTokensTest.kt`、`web/test/tokens.test.mjs`。三份測的是同一組承諾：產生器沒把值弄壞，以及設計系統承諾的對比度在該平台仍成立。預期值是寫死的字面量（例如 `0x1E5FCC`），所以動到色彩 token 時三端通常要一起改。
 5. 確認 `git diff` 只包含預期的來源檔與產生檔變更。
 
 ## 平台規範
 
-### Apple
+### iOS
 
-- 只支援 iOS，最低版本以 `Package.swift` 的 `platforms` 宣告為準；原始碼位於 `apple/Sources/LeoKit`，測試位於 `apple/Tests/LeoKitTests`。
+- 只支援 iOS，最低版本以 `Package.swift` 的 `platforms` 宣告為準；原始碼位於 `ios/Sources/LeoKit`，測試位於 `ios/Tests/LeoKitTests`。
 - 字級使用 Dynamic Type，色彩使用動態色，圓角使用 continuous style；圖示使用 SF Symbols 字串，不在套件內攜帶圖示資產。
 - 畫面使用 `LKColor`；測試或工具需要主題原始值時使用 `LKColorValues`。
 - Linux 容器沒有 SwiftUI，只能驗證 manifest 與語法：
 
   ```bash
   swift package describe
-  swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
+  swiftc -parse ios/Sources/LeoKit/Tokens/*.swift
   ```
 
 - 在 macOS 上不要用 `swift build` 編譯此套件，請指定 iOS destination：
@@ -140,10 +140,10 @@ npm test
 cd android
 LANG=C.UTF-8 ./gradlew :leokit:assembleRelease :leokit:test --no-daemon
 
-# Apple：Linux 容器可執行的檢查
+# iOS：Linux 容器可執行的檢查
 cd ..
 swift package describe
-swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
+swiftc -parse ios/Sources/LeoKit/Tokens/*.swift
 ```
 
 若只修改單一平台，至少執行該平台的 typecheck、build 與 test；若修改 `tokens/`，先重新產生檔案，再確認 `git diff` 只包含預期變更。
@@ -155,7 +155,7 @@ swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
 - 優先使用現有 token，不要在元件內新增未定義的色彩、間距、圓角或尺寸常數。
 - 保持公開 API 的命名與既有元件風格一致；新增行為應補上對應平台的測試。
 - 不要提交 `node_modules/`、`web/dist/`、Gradle/Xcode 建置輸出、`local.properties` 或其他已列於 `.gitignore` 的本機檔案。
-- 發佈版本時，`web/package.json` 與 `android/gradle.properties` 的版本必須和 `vX.Y.Z` tag 一致；Apple 套件則透過 git tag 發佈。
+- 發佈版本時，`web/package.json` 與 `android/gradle.properties` 的版本必須和 `vX.Y.Z` tag 一致；iOS 套件則透過 git tag 發佈。
 
 ## 交付前檢查
 
@@ -174,7 +174,7 @@ swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
 
 - 採用 [Conventional Commits](https://www.conventionalcommits.org/)：`<type>(<scope>): <標題>`。
 - **標題用正體中文**，祈使語氣，不加句號；type 與 scope 保持英文小寫。
-- scope 填主要變更範圍，例如 `apple`、`android`、`web`、`tokens` 或 `ci`；跨平台或 repository 層級的變更不填 scope。
+- scope 填主要變更範圍，例如 `ios`、`android`、`web`、`tokens` 或 `ci`；跨平台或 repository 層級的變更不填 scope。
 - 常用 type：`feat` 新增元件或公開 API、`fix` 修正錯誤或違反元件契約的行為、`test` 新增或調整測試、`docs` README／開發文件、`build` 建置或產生流程、`ci` CI／發佈流程、`chore` 其他維護工作、`refactor` 重整結構但不改變語意。
 - body 用列點，寫「為什麼改」與影響範圍；標題已足夠說明的小改動可省略 body。
 - 使用 Claude Code 或 Codex 時，結尾保留 harness 當次注入的署名 trailer（例如 `Co-Authored-By`、`Claude-Session` 或 Codex 提供的對應欄位），逐字複製，不要自行改寫或省略；這些值每個 session 都不同，不得寫死在文件裡。

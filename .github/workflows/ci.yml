@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tokens: ${{ steps.scopes.outputs.tokens }}
-      apple: ${{ steps.scopes.outputs.apple }}
+      ios: ${{ steps.scopes.outputs.ios }}
       android: ${{ steps.scopes.outputs.android }}
       web: ${{ steps.scopes.outputs.web }}
     steps:
@@ -99,11 +99,11 @@ jobs:
           name: android-test-results
           path: android/leokit/build/reports/tests/
 
-  apple:
-    name: Apple
+  ios:
+    name: iOS
     needs: scopes
-    if: needs.scopes.outputs.apple == 'true'
-    # SwiftUI + iOS 26 無法在 Linux 編譯，這個 job 一定要跑 macOS runner
+    if: needs.scopes.outputs.ios == 'true'
+    # SwiftUI + iOS 無法在 Linux 編譯，這個 job 一定要跑 macOS runner
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7

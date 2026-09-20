@@ -4,7 +4,7 @@
 #
 # 分流規則（由上往下第一個命中者為準）：
 #   *.md                   純文件，不算進任何範圍
-#   apple/、Package.swift  apple —— manifest 得放在根目錄，但它屬於 Apple 套件
+#   ios/、Package.swift    ios —— manifest 得放在根目錄，但它屬於 iOS 套件
 #   android/               android
 #   web/                   web
 #   其他                   全跑（tokens/、.github/、根目錄設定檔…）
@@ -20,26 +20,26 @@ set -euo pipefail
 : "${GITHUB_OUTPUT:=/dev/stdout}"
 
 tokens=false
-apple=false
+ios=false
 android=false
 web=false
 
 emit() {
     {
         printf 'tokens=%s\n' "$tokens"
-        printf 'apple=%s\n' "$apple"
+        printf 'ios=%s\n' "$ios"
         printf 'android=%s\n' "$android"
         printf 'web=%s\n' "$web"
     } >> "$GITHUB_OUTPUT"
 
-    printf '變更範圍：tokens=%s apple=%s android=%s web=%s\n' \
-        "$tokens" "$apple" "$android" "$web"
+    printf '變更範圍：tokens=%s ios=%s android=%s web=%s\n' \
+        "$tokens" "$ios" "$android" "$web"
 }
 
 run_everything() {
     printf '::notice::%s，這次所有 job 都跑\n' "$1"
     tokens=true
-    apple=true
+    ios=true
     android=true
     web=true
     emit
@@ -71,11 +71,11 @@ printf '這次變更的檔案：\n%s\n' "$files"
 while IFS= read -r file; do
     [ -n "$file" ] || continue
     case "$file" in
-        *.md)                  continue ;;
-        apple/*|Package.swift) apple=true ;;
-        android/*)             android=true ;;
-        web/*)                 web=true ;;
-        *)                     apple=true; android=true; web=true ;;
+        *.md)                continue ;;
+        ios/*|Package.swift) ios=true ;;
+        android/*)           android=true ;;
+        web/*)               web=true ;;
+        *)                   ios=true; android=true; web=true ;;
     esac
     tokens=true
 done <<< "$files"

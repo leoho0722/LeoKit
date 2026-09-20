@@ -2,7 +2,7 @@ name: Publish
 
 # 打上 vX.Y.Z 的 tag 就發佈。
 # web 與 android 發到 GitHub Packages；
-# Swift 沒有 GitHub Packages registry，SwiftPM 直接吃 git tag，所以 apple 只要建 Release。
+# Swift 沒有 GitHub Packages registry，SwiftPM 直接吃 git tag，所以 ios 只要建 Release。
 on:
   push:
     tags: ["v*.*.*"]
@@ -69,7 +69,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  apple:
+  ios:
     name: Swift Package（建 Release）
     runs-on: macos-26
     steps:

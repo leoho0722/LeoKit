@@ -13,7 +13,7 @@ let package = Package(
     targets: [
         .target(
             name: "LeoKit",
-            path: "apple/Sources/LeoKit",
+            path: "ios/Sources/LeoKit",
             swiftSettings: [
                 .swiftLanguageMode(.v6),
             ]
@@ -21,7 +21,7 @@ let package = Package(
         .testTarget(
             name: "LeoKitTests",
             dependencies: ["LeoKit"],
-            path: "apple/Tests/LeoKitTests"
+            path: "ios/Tests/LeoKitTests"
         ),
     ]
 )

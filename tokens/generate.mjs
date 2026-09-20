@@ -6,7 +6,7 @@
  * 平台對應：tokens/platform-map.json（type style 對 iOS / Android 原生字級的對應）
  *
  * 產出（全部標記為 generated，不要手動編輯）：
- *   apple/Sources/LeoKit/Tokens/LK<型別>.generated.swift（一型別一檔，守 300 行上限）
+ *   ios/Sources/LeoKit/Tokens/LK<型別>.generated.swift（一型別一檔，守 300 行上限）
  *   android/leokit/src/main/kotlin/io/github/leoho0722/leokit/tokens/LK<主題>.generated.kt（依 Kotlin 慣例分三檔）
  *   web/src/tokens.generated.css
  *   web/src/tokens.generated.ts
@@ -107,7 +107,7 @@ function write(relPath, body) {
 const SWIFT_MODULE = 'LeoKit';
 const SWIFT_CREATED_ON = '2026/09/19';
 const SWIFT_LINE_LIMIT = 100;
-const SWIFT_DIR = 'apple/Sources/LeoKit/Tokens';
+const SWIFT_DIR = 'ios/Sources/LeoKit/Tokens';
 
 /** Xcode 風格檔頭的六行。 */
 function swiftHeader(fileName) {
