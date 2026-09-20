@@ -159,10 +159,13 @@ struct LKTokensTests {
         let ratio = contrastRatio(pair.foreground, pair.background, isDark: isDark)
 
         // Then
+        // Comment 是 ExpressibleByStringInterpolation，吃得下字面量但吃不下 + 串出來的
+        // String，所以格式化先做完，訊息本身維持單一字面量
+        let shown = ratio.formatted(.number.precision(.fractionLength(2)))
+
         #expect(
             ratio >= pair.minimum,
-            "\(theme)：\(pair.name) 只有 \(ratio.formatted(.number.precision(.fractionLength(2))))"
-                + ":1，需 ≥ \(pair.minimum)"
+            "\(theme)：\(pair.name) 只有 \(shown):1，需 ≥ \(pair.minimum)"
         )
     }
 }
