@@ -1,0 +1,153 @@
+/* LeoKit — 由 tokens/generate.mjs 產生，請勿手動編輯。 */
+/* 來源：tokens/tokens.json；要改 token 請改那裡，然後執行 `node tokens/generate.mjs`。 */
+
+:root, [data-theme="light"] {
+  --bg-canvas: #f5f6f8;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #eceef2;
+  --bg-inset: #e3e6eb;
+  --bg-scrim: rgba(0, 0, 0, 0.4);
+  --bg-inverse: #22262c;
+  --text-primary: #14171a;
+  --text-secondary: #4e555e;
+  --text-tertiary: #646c76;
+  --text-disabled: #a0a6ae;
+  --text-on-brand: #ffffff;
+  --text-on-danger: #ffffff;
+  --text-on-inverse: #f4f6f8;
+  --brand: #1e5fcc;
+  --brand-hover: #1a54b5;
+  --brand-pressed: #16489c;
+  --brand-subtle: #e8effc;
+  --brand-ink: #134391;
+  --brand-on-inverse: #8fb8ff;
+  --success: #1c7c4a;
+  --success-subtle: #e3f3e9;
+  --success-ink: #145f39;
+  --warning: #8a5a00;
+  --warning-subtle: #fbf0da;
+  --warning-ink: #6d4700;
+  --danger: #c22b2b;
+  --danger-subtle: #fce9e9;
+  --danger-ink: #9f1f1f;
+  --text-link: #1e5fcc;
+  --border-subtle: #e4e7ec;
+  --border-default: #d3d8df;
+  --border-strong: #aeb5bf;
+  --border-control: #7e858f;
+  --border-focus: #1e5fcc;
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgba(15,23,42,0.06);
+  --shadow-sm: 0 2px 6px rgba(15,23,42,0.08);
+  --shadow-md: 0 6px 16px rgba(15,23,42,0.1);
+  --shadow-lg: 0 16px 40px rgba(15,23,42,0.14);
+}
+[data-theme="dark"] {
+  --bg-canvas: #0e1116;
+  --bg-surface: #161a20;
+  --bg-elevated: #1d222a;
+  --bg-subtle: #232935;
+  --bg-inset: #0a0d11;
+  --bg-scrim: rgba(0, 0, 0, 0.6);
+  --bg-inverse: #e9ecf1;
+  --text-primary: #ebeef2;
+  --text-secondary: #a6aeb9;
+  --text-tertiary: #8a929e;
+  --text-disabled: #5c636d;
+  --text-on-brand: #08172e;
+  --text-on-danger: #2a0c0c;
+  --text-on-inverse: #14171a;
+  --brand: #5b9bff;
+  --brand-hover: #7aaeff;
+  --brand-pressed: #4a8aee;
+  --brand-subtle: #16243b;
+  --brand-ink: #a8c8ff;
+  --brand-on-inverse: #1e5fcc;
+  --success: #3fbf78;
+  --success-subtle: #112619;
+  --success-ink: #74d69d;
+  --warning: #e0a63c;
+  --warning-subtle: #2a2112;
+  --warning-ink: #f0c374;
+  --danger: #ff6b6b;
+  --danger-subtle: #2e1618;
+  --danger-ink: #ff9f9f;
+  --text-link: #5b9bff;
+  --border-subtle: #262c36;
+  --border-default: #333a45;
+  --border-strong: #4a525e;
+  --border-control: #737c88;
+  --border-focus: #5b9bff;
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.55);
+  --shadow-md: 0 6px 16px rgba(0,0,0,0.6);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.7);
+}
+:root {
+  --spacing-0: 0;
+  --spacing-2: 2px;
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+  --radius-none: 0;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+  --control-h-sm: 32px;
+  --control-h-md: 44px;
+  --control-h-lg: 52px;
+  --tap-min-ios: 44px;
+  --tap-min-android: 48px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 28px;
+  --choice-size: 20px;
+  --avatar-sm: 28px;
+  --avatar-md: 36px;
+  --avatar-lg: 48px;
+  --track-h: 6px;
+  --slider-thumb: 24px;
+  --tabbar-h: 56px;
+  --hairline: 1px;
+  --border-w-strong: 1.5px;
+  --focus-ring-w: 2px;
+  --focus-ring-offset: 2px;
+  --content-max: 720px;
+  --layout-max: 1120px;
+  --opacity-disabled: 0.4;
+  --opacity-pressed: 0.72;
+  --opacity-hover-layer: 0.06;
+  --opacity-selected-layer: 0.12;
+  --font-display: -apple-system, "SF Pro Display", "Segoe UI Variable Display", Roboto, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-sans: -apple-system, "SF Pro Text", "Segoe UI Variable Text", Roboto, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+.display { font-family: var(--font-display); font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.4px; }
+.title-1 { font-family: var(--font-display); font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.3px; }
+.title-2 { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.2px; }
+.title-3 { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; }
+.headline { font-family: var(--font-sans); font-size: 16px; line-height: 22px; font-weight: 600; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.body-strong { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 600; }
+.callout { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 400; }
+.subhead { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; }
+.footnote { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 400; }
+.caption { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 400; }
+.label-lg { font-family: var(--font-sans); font-size: 16px; line-height: 20px; font-weight: 600; }
+.label { font-family: var(--font-sans); font-size: 14px; line-height: 16px; font-weight: 600; }
+.label-sm { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.2px; }
+.code { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }
