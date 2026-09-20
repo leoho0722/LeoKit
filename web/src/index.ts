@@ -102,6 +102,7 @@ export type {
   TableColumn,
   TableRow,
   TableOptions,
+  SliderFields,
   SliderOptions,
   StepperOptions,
   PickerKind,

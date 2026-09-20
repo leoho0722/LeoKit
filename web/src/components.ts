@@ -1232,7 +1232,7 @@ export function Table(options: TableOptions): HTMLDivElement {
 
 /* ---------------------------------- Slider --------------------------------- */
 
-export interface SliderOptions {
+export interface SliderFields {
   min?: number;
   max?: number;
   step?: number;
@@ -1249,6 +1249,8 @@ export interface SliderOptions {
   onChange?: (value: number) => void;
   class?: string;
 }
+
+export type SliderOptions = WithAccessibleName<SliderFields>;
 
 /** 在一個連續範圍裡挑一個值。用原生 `input[type=range]`，鍵盤與閱讀器行為免費取得。 */
 export function Slider(options: SliderOptions): HTMLDivElement {
