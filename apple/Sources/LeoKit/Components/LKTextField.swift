@@ -72,7 +72,6 @@ public struct LKTextField: View {
             footer
         }
         .accessibilityElement(children: .contain)
-        .accessibilityValue(error ?? "")
     }
 }
 
@@ -81,12 +80,15 @@ public struct LKTextField: View {
 private extension LKTextField {
 
     /// 輸入框上方的標籤，沒給時不佔位置
+    ///
+    /// - Note: 對 VoiceOver 隱藏 —— 它已經是輸入框自己的名稱了，再唸一次是重複
     @ViewBuilder
     var labelText: some View {
         if let label {
             Text(label)
                 .font(LKFont.subhead)
                 .foregroundStyle(LKColor.textSecondary)
+                .accessibilityHidden(true)
         }
     }
 
@@ -116,11 +118,16 @@ private extension LKTextField {
     }
 
     /// 真正接收鍵盤輸入的地方
+    ///
+    /// - Note: 名稱一定要掛在這裡。上方的標籤是同級元素，不會自動變成它的名稱，
+    ///   只給 `label` 不給 `placeholder` 時這格對 VoiceOver 就是沒有名字的
     var input: some View {
         TextField(placeholder, text: $text)
             .font(LKFont.body)
             .foregroundStyle(LKColor.textPrimary)
             .textFieldStyle(.plain)
+            .accessibilityLabel(label ?? placeholder)
+            .accessibilityHint(error ?? help ?? "")
     }
 
     /// 輸入框的外框，有錯誤時轉紅並加粗

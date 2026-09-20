@@ -81,7 +81,6 @@ public struct LKPickerField: View {
             footer
         }
         .accessibilityElement(children: .contain)
-        .accessibilityValue(error ?? value ?? placeholder)
     }
 }
 
@@ -90,10 +89,13 @@ public struct LKPickerField: View {
 private extension LKPickerField {
 
     /// 欄位上方的標籤
+    ///
+    /// - Note: 對 VoiceOver 隱藏 —— 它已經是欄位本身的名稱了，再唸一次是重複
     var titleText: some View {
         Text(title)
             .font(LKFont.subhead)
             .foregroundStyle(LKColor.textSecondary)
+            .accessibilityHidden(true)
     }
 
     /// 可以按的欄位本體：圖示、目前的值、尾端的箭頭
@@ -120,6 +122,9 @@ private extension LKPickerField {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(value ?? placeholder)
+        .accessibilityHint(error ?? help ?? "")
     }
 
     /// 欄位最前面的圖示，清單型不畫
