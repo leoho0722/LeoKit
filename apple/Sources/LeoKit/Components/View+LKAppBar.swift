@@ -23,7 +23,7 @@ extension View {
     /// - Note: 安全區的上內距由 `NavigationStack` 處理，呼叫端不必自己加
     /// - Note: 標題列的圖示動作最多兩個，更多請收進 `LKMenu`
     public func lkAppBar(_ title: String, isLarge: Bool = false) -> some View {
-        modifier(LKAppBarModifier(title: title, isLarge: isLarge))
+        modifier(LKAppBarModifier(isLarge: isLarge, title: title))
     }
 }
 
