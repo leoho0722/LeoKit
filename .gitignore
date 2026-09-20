@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+web/dist/
+*.tsbuildinfo
+
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.kotlin/
+
+# Xcode / SwiftPM
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# 編輯器
+.idea/
+.vscode/*
+!.vscode/extensions.json

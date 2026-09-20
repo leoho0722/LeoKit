@@ -1,0 +1,20 @@
+{
+  "_comment": "每個 type style 在 iOS 與 Android 的原生對應。tokens.json 保持與 Design System artifact 同步、不加欄位，平台對應放在這裡。",
+  "type": {
+    "display":     { "ios": { "textStyle": "largeTitle" },   "android": { "role": "displaySmall" } },
+    "title-1":     { "ios": { "textStyle": "title" },        "android": { "role": "headlineMedium" } },
+    "title-2":     { "ios": { "textStyle": "title2" },       "android": { "role": "headlineSmall" } },
+    "title-3":     { "ios": { "textStyle": "title3" },       "android": { "role": "titleLarge" } },
+    "headline":    { "ios": { "textStyle": "headline" },     "android": { "role": "titleMedium" } },
+    "body":        { "ios": { "textStyle": "body" },         "android": { "role": "bodyLarge" } },
+    "body-strong": { "ios": { "textStyle": "body", "weight": "semibold" }, "android": { "role": "bodyLarge" } },
+    "callout":     { "ios": { "textStyle": "callout" },      "android": { "role": "bodyMedium" } },
+    "subhead":     { "ios": { "textStyle": "subheadline" },  "android": { "role": "titleSmall" } },
+    "footnote":    { "ios": { "textStyle": "footnote" },     "android": { "role": "bodySmall" } },
+    "caption":     { "ios": { "textStyle": "caption" },      "android": { "role": "labelSmall" } },
+    "label-lg":    { "ios": { "textStyle": "body", "weight": "semibold" },     "android": { "role": "labelLarge" } },
+    "label":       { "ios": { "textStyle": "subheadline", "weight": "semibold" }, "android": { "role": "labelLarge" } },
+    "label-sm":    { "ios": { "textStyle": "caption", "weight": "semibold" },  "android": { "role": "labelSmall" } },
+    "code":        { "ios": { "textStyle": "footnote", "design": "monospaced" }, "android": { "role": "bodySmall", "mono": true } }
+  }
+}

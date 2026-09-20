@@ -1,0 +1,101 @@
+name: Publish
+
+# 打上 vX.Y.Z 的 tag 就發佈。
+# web 與 android 發到 GitHub Packages；
+# Swift 沒有 GitHub Packages registry，SwiftPM 直接吃 git tag，所以 apple 只要建 Release。
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  web:
+    name: npm → GitHub Packages
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+          registry-url: https://npm.pkg.github.com
+          scope: "@leoho0722"
+      - run: npm ci
+      - name: package.json 的版本要與 tag 相符
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag 是 $tag，但 package.json 是 $pkg"
+            exit 1
+          fi
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  android:
+    name: Maven → GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v6
+      - run: sdkmanager "platforms;android-37.2" "build-tools;37.0.0-rc2"
+      - name: gradle.properties 的版本要與 tag 相符
+        working-directory: android
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)"
+          if [ "$tag" != "$ver" ]; then
+            echo "::error::tag 是 $tag，但 gradle.properties 是 $ver"
+            exit 1
+          fi
+      - name: 發佈
+        working-directory: android
+        run: ./gradlew :leokit:publishReleasePublicationToGitHubPackagesRepository --no-daemon
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  apple:
+    name: Swift Package（建 Release）
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      # 與 ci.yml 同一個理由：只支援 iOS，swift build 會編給 macOS 然後找不到 UIKit
+      - name: 挑一台 iOS 模擬器
+        id: sim
+        run: |
+          udid=$(.github/scripts/pick-ios-simulator.sh)
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -scheme LeoKit \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: 測試
+        run: |
+          xcodebuild test \
+            -scheme LeoKit \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO
+      - name: 建立 GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

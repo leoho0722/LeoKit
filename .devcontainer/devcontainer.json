@@ -1,0 +1,31 @@
+{
+  "name": "LeoKit",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  // Swift 的官方 image 沒有非 root 使用者，交給 common-utils 建
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode",
+      "installZsh": true
+    }
+  },
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    // Kotlin 的 backtick 測試名稱會產生含中文的 class 檔名，locale 必須是 UTF-8
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "sswg.swift-lang",
+        "fwcd.kotlin",
+        "vscjava.vscode-gradle",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}

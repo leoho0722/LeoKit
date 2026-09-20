@@ -1,0 +1,53 @@
+{
+  "name": "@leoho0722/leokit",
+  "version": "0.1.0",
+  "description": "LeoKit — 一份語意 token 來源，三種原生實作。這是 Web 端的實作層。",
+  "license": "MIT",
+  "author": "Leo Ho",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leoho0722/LeoKit.git",
+    "directory": "web"
+  },
+  "homepage": "https://github.com/leoho0722/LeoKit#readme",
+  "bugs": "https://github.com/leoho0722/LeoKit/issues",
+  "keywords": ["design-system", "design-tokens", "ui", "components", "leokit"],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "sideEffects": ["*.css"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./leokit.css": "./dist/leokit.css",
+    "./iife": "./dist/leokit.iife.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=26" },
+  "scripts": {
+    "generate": "node ../tokens/generate.mjs",
+    "clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:iife": "esbuild src/iife.ts --bundle --format=iife --global-name=LeoKit --outfile=dist/leokit.iife.js --target=es2019",
+    "build:css": "node scripts/build-css.mjs",
+    "build": "npm run clean && npm run build:types && npm run build:iife && npm run build:css",
+    "test": "node --test test/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.0"
+  }
+}
