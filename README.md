@@ -79,6 +79,7 @@ swift package describe          # Apple：只驗證 manifest
 **Apple 的套件無法在 Linux 容器內編譯** —— 它用 SwiftUI，而 Linux 上沒有 SwiftUI。
 容器內能做的是 `swift package describe`（驗證 manifest 與來源路徑）與 `swiftc -parse`（語法檢查）；
 真正的 build 與測試要在 macOS + Xcode，CI 裡跑在 `macos-26` runner 上。
+在 Mac 上要用 `xcodebuild` 指定 iOS destination，不能用 `swift build`（理由見 `apple/README.md`）。
 
 ## 安裝
 

@@ -44,3 +44,13 @@ struct SubscriptionRow: View {
 swift package describe
 swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
 ```
+
+在 Mac 上也**不要用 `swift build`** —— 它一律編給 host，也就是 macOS，
+而這個套件只支援 iOS，會直接在 `import UIKit` 爆 `no such module 'UIKit'`。
+要編 iOS 得用 xcodebuild 指定 destination，而 `test` 的 destination
+必須是具體機器，不能用 generic：
+
+```bash
+xcodebuild build -scheme LeoKit -destination 'generic/platform=iOS'
+xcodebuild test  -scheme LeoKit -destination "id=$(.github/scripts/pick-ios-simulator.sh)"
+```

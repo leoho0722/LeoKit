@@ -74,8 +74,27 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
-      - run: swift build
-      - run: swift test
+
+      # 與 ci.yml 同一個理由：只支援 iOS，swift build 會編給 macOS 然後找不到 UIKit
+      - name: 挑一台 iOS 模擬器
+        id: sim
+        run: |
+          udid=$(.github/scripts/pick-ios-simulator.sh)
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -scheme LeoKit \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: 測試
+        run: |
+          xcodebuild test \
+            -scheme LeoKit \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO
       - name: 建立 GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
         env:
