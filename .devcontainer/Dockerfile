@@ -3,7 +3,7 @@
 # 三套工具鏈都從官方 image 取，用 multi-stage 合起來；只有 Android SDK 需要自己裝。
 #
 # Web 與 Android 的編譯、測試都在這裡跑。
-# Apple 的套件用 SwiftUI 且以 iOS 26 / macOS 26 為目標，無法在 Linux 編譯 ——
+# Apple 的套件用 SwiftUI 且只支援 iOS 26，無法在 Linux 編譯 ——
 # 這裡只做 Package.swift 的 manifest 驗證與 Swift 語法檢查，真正的編譯要在 macOS + Xcode。
 
 FROM node:26-bookworm AS node
