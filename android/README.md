@@ -1,7 +1,5 @@
 # LeoKit — Android
 
-minSdk 31、compileSdk 37.2、Compose + Material 3。
-
 ## 用法
 
 ```kotlin
@@ -32,8 +30,7 @@ LKTheme {
 ## 注意
 
 - **AGP 9 內建 Kotlin 支援**，所以不要再套用 `org.jetbrains.kotlin.android`，套了會直接失敗。
-- `explicitApi` 的旗標是透過 `freeCompilerArgs` 加的，會一併套用到測試原始碼 ——
-  測試裡的宣告也要寫出 `public`。
+- `explicitApi` 的旗標是透過 `freeCompilerArgs` 加的，會一併套用到測試原始碼，因此測試裡的宣告也要寫出 `public`。
 - 測試用中文的 backtick 函式名稱，locale 必須是 UTF-8（`LANG=C.UTF-8`），
   否則 Kotlin 編譯器寫不出含中文的 class 檔名。
 

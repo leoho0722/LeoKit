@@ -1,14 +1,5 @@
 # @leoho0722/leokit
 
-LeoKit 的 Web 實作層。沒有框架依賴 —— 元件是回傳 `HTMLElement` 的工廠函式。
-
-## 安裝
-
-```bash
-echo "@leoho0722:registry=https://npm.pkg.github.com" >> .npmrc
-npm install @leoho0722/leokit
-```
-
 ## 用法
 
 樣式分兩層，兩個都要載入：

@@ -1,8 +1,6 @@
 # LeoKit — Apple
 
-iOS 26，SwiftUI。
-
-`Package.swift` 在 repo 根目錄，不在這個資料夾裡 —— SwiftPM 不支援從 git URL 解析子目錄裡的套件，
+`Package.swift` 在 repo 根目錄，不在這個資料夾裡：SwiftPM 不支援從 git URL 解析子目錄裡的套件，
 manifest 必須在根目錄。這裡只放原始碼，manifest 的 `path` 指過來。
 
 ## 用法
@@ -45,7 +43,7 @@ swift package describe
 swiftc -parse apple/Sources/LeoKit/Tokens/*.swift
 ```
 
-在 Mac 上也**不要用 `swift build`** —— 它一律編給 host，也就是 macOS，
+在 Mac 上也**不要用 `swift build`**：它一律編給 host，也就是 macOS，
 而這個套件只支援 iOS，會直接在 `import UIKit` 爆 `no such module 'UIKit'`。
 要編 iOS 得用 xcodebuild 指定 destination，而 `test` 的 destination
 必須是具體機器，不能用 generic：

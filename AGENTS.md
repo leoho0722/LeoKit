@@ -6,14 +6,14 @@
 
 LeoKit 是一套跨平台設計系統元件庫，提供三種原生實作：
 
-- `apple/`：iOS 26、SwiftUI，套件 manifest 位於根目錄的 `Package.swift`。
-- `android/`：minSdk 31、Compose + Material 3。
+- `apple/`：SwiftUI，套件 manifest 位於根目錄的 `Package.swift`。
+- `android/`：Compose + Material 3。
 - `web/`：Node.js / TypeScript，無框架依賴的 DOM 工廠函式。
 - `tokens/`：設計 token 的唯一真實來源與產生器。
 
 三端的元件語意與名稱應保持一致，但外觀與互動要遵循各平台慣例。平台已有對等元件時，優先包裝平台元件，不要自行重繪。
 
-設計系統定義的 27 個元件三端都已實作，新增元件等於三端都要補。`README.md` 的元件對照表記錄了刻意的形狀差異（Toggle、SegmentedControl、Dialog、AppBar、Toast、Tip、Combobox、Radio），改動任一端之前先查那張表，不要把刻意的差異當成 bug 修掉。
+設計系統定義的元件三端都已實作，新增元件等於三端都要補。`README.md` 的元件對照表記錄了刻意的形狀差異（Toggle、SegmentedControl、Dialog、AppBar、Toast、Tip、Combobox、Radio），改動任一端之前先查那張表，不要把刻意的差異當成 bug 修掉。
 
 SwiftPM 無法從 git URL 解析子目錄裡的套件，所以 `Package.swift` 必須放在 repository 根目錄；原始碼仍在 `apple/`，由 target 的 `path` 指過去。兩者是同一個套件，不是兩套設定。
 
@@ -55,14 +55,14 @@ node tokens/generate.mjs
 1. 改 `tokens/tokens.json`。
 2. 新增或調整字級時一併補 `tokens/platform-map.json`。
 3. 從 repository 根目錄執行 `node tokens/generate.mjs`。
-4. 更新三端 token 測試的預期值：`apple/Tests/LeoKitTests/LKTokensTests.swift`、`android/leokit/src/test/kotlin/io/github/leoho0722/leokit/LKTokensTest.kt`、`web/test/tokens.test.mjs`。三份測的是同一組承諾 —— 產生器沒把值弄壞，以及設計系統承諾的對比度在該平台仍成立 —— 預期值是寫死的字面量（例如 `0x1E5FCC`），所以動到色彩 token 時三端通常要一起改。
+4. 更新三端 token 測試的預期值：`apple/Tests/LeoKitTests/LKTokensTests.swift`、`android/leokit/src/test/kotlin/io/github/leoho0722/leokit/LKTokensTest.kt`、`web/test/tokens.test.mjs`。三份測的是同一組承諾：產生器沒把值弄壞，以及設計系統承諾的對比度在該平台仍成立。預期值是寫死的字面量（例如 `0x1E5FCC`），所以動到色彩 token 時三端通常要一起改。
 5. 確認 `git diff` 只包含預期的來源檔與產生檔變更。
 
 ## 平台規範
 
 ### Apple
 
-- 只支援 iOS 26；原始碼位於 `apple/Sources/LeoKit`，測試位於 `apple/Tests/LeoKitTests`。
+- 只支援 iOS，最低版本以 `Package.swift` 的 `platforms` 宣告為準；原始碼位於 `apple/Sources/LeoKit`，測試位於 `apple/Tests/LeoKitTests`。
 - 字級使用 Dynamic Type，色彩使用動態色，圓角使用 continuous style；圖示使用 SF Symbols 字串，不在套件內攜帶圖示資產。
 - 畫面使用 `LKColor`；測試或工具需要主題原始值時使用 `LKColorValues`。
 - Linux 容器沒有 SwiftUI，只能驗證 manifest 與語法：
