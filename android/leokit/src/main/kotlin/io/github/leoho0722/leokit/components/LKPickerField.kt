@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import io.github.leoho0722.leokit.LKShapes
@@ -77,7 +78,14 @@ public fun LKPickerField(
                     shape = LKShapes.md,
                 )
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-                .then(if (isError) Modifier.semantics { error(errorText) } else Modifier)
+                // label 是這個 Row 的 sibling，不寫進來的話 TalkBack 聚焦到這顆按鈕時
+                // 只唸得到值，畫面上有兩個以上的欄位就分不出誰是誰
+                .semantics(mergeDescendants = true) {
+                    contentDescription = "$label，${value ?: placeholder}"
+                    if (errorText != null) {
+                        error(errorText)
+                    }
+                }
                 .padding(horizontal = LKSpacing.spacing12),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(LKSpacing.spacing8),

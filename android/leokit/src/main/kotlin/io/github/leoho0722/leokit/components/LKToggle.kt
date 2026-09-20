@@ -4,12 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.github.leoho0722.leokit.LKTheme
@@ -42,35 +44,45 @@ public fun LKToggle(
     enabled: Boolean = true,
 ) {
     val colors = LKTheme.colors
-    val switch: @Composable () -> Unit = {
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-            modifier = if (label == null && contentDescription != null) {
-                Modifier.semantics { this.contentDescription = contentDescription }
-            } else {
-                Modifier
-            },
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = colors.brand,
-                checkedThumbColor = colors.textOnBrand,
-                // 關閉時不可只靠灰色深淺，邊框是它在高對比模式下的辨識依據
-                uncheckedTrackColor = colors.bgSubtle,
-                uncheckedBorderColor = colors.borderControl,
-                uncheckedThumbColor = colors.textSecondary,
-            ),
-        )
-    }
+    val switchColors = SwitchDefaults.colors(
+        checkedTrackColor = colors.brand,
+        checkedThumbColor = colors.textOnBrand,
+        // 關閉時不可只靠灰色深淺，邊框是它在高對比模式下的辨識依據
+        uncheckedTrackColor = colors.bgSubtle,
+        uncheckedBorderColor = colors.borderControl,
+        uncheckedThumbColor = colors.textSecondary,
+    )
 
     if (label == null) {
-        Row(modifier = modifier) { switch() }
+        Row(modifier = modifier) {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                modifier = if (contentDescription != null) {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                } else {
+                    Modifier
+                },
+                colors = switchColors,
+            )
+        }
         return
     }
+
+    // 整列是一個 toggleable 的節點：名稱來自 Text，角色與狀態來自開關。
+    // 只把 Text 放在 Switch 旁邊當同級子項的話，TalkBack 不會拿它當開關的名稱，
+    // 聚焦上去只會唸成一個沒有標籤的開關。
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = LKSize.tapMinAndroid),
+            .defaultMinSize(minHeight = LKSize.tapMinAndroid)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(LKSpacing.spacing12),
     ) {
@@ -80,6 +92,12 @@ public fun LKToggle(
             color = colors.textPrimary,
             modifier = Modifier.weight(1f),
         )
-        switch()
+        // onCheckedChange = null：命中區是整列，開關自己不再是第二個可點目標
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            enabled = enabled,
+            colors = switchColors,
+        )
     }
 }

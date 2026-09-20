@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import io.github.leoho0722.leokit.LKShapes
@@ -69,6 +70,15 @@ public fun LKTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = LKSize.controlHMd)
+                // 上方那個 Text 是這格的 sibling，不會成為輸入框的名稱。
+                // 標籤得寫進輸入框自己的語意，TalkBack 才唸得出這格在問什麼。
+                .then(
+                    if (label != null) {
+                        Modifier.semantics { contentDescription = label }
+                    } else {
+                        Modifier
+                    },
+                )
                 .then(if (isError) Modifier.semantics { error(errorText) } else Modifier),
             enabled = enabled,
             isError = isError,

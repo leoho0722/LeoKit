@@ -25,7 +25,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
  * 列表裡的一列。
  *
  * 標題與副標題都只有一行，放不下就以省略號截斷 —— 需要多行的內容不該用這個元件。
- * 有 [onClick] 或 [showChevron] 就是可點的列，整列都是命中區。
+ * 有 [onClick] 就是可點的列，整列都是命中區。
  * 列上有開關時不要再讓整列可點：開關自己是唯一的命中區。
  *
  * @param title 這一列的主要文字
@@ -34,7 +34,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
  * @param value 尾端靠右對齊的數值或狀態文字；不需要時傳 null
  * @param leadingIcon 最前面的圖示；不放圖示時傳 null
  * @param trailing 尾端自訂的內容，例如開關或按鈕；不需要時傳 null
- * @param showChevron 尾端是否畫一個往右的箭頭，表示點下去會換頁
+ * @param showChevron 尾端是否畫一個往右的箭頭，表示點下去會換頁；為 true 時 [onClick] 不能是 null
  * @param selected 這一列目前是否被選取；選取時底色與標題顏色都換成品牌色
  * @param onClick 點整列時要做的事；傳 null 表示這一列不可點
  */
@@ -50,9 +50,14 @@ public fun LKListRow(
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
+    // 箭頭的意思是「點下去會換頁」。只畫箭頭卻沒掛 onClick 的話，
+    // 這一列看起來可點、點了卻沒反應 —— 與其讓它出貨，不如組出來就擋掉。
+    require(!showChevron || onClick != null) {
+        "LKListRow：showChevron 代表點下去會換頁，必須同時給 onClick"
+    }
+
     val colors = LKTheme.colors
     val typography = LKTheme.typography
-    val tappable = onClick != null || showChevron
 
     Row(
         modifier = modifier
@@ -96,7 +101,7 @@ public fun LKListRow(
         if (trailing != null) {
             Box { trailing() }
         }
-        if (tappable && showChevron) {
+        if (showChevron) {
             Icon(
                 imageVector = LKIcons.Chevron,
                 contentDescription = null,
