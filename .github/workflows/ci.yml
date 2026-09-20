@@ -1,17 +1,42 @@
 name: CI
 
+# 純 Markdown 變更連 workflow 都不啟動；其餘的分流交給 scopes job，
+# 規則寫在 .github/scripts/changed-scopes.sh。
 on:
   push:
     branches: [main]
+    paths-ignore: ["**.md"]
   pull_request:
+    paths-ignore: ["**.md"]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  scopes:
+    name: 判斷變更範圍
+    runs-on: ubuntu-latest
+    outputs:
+      tokens: ${{ steps.scopes.outputs.tokens }}
+      apple: ${{ steps.scopes.outputs.apple }}
+      android: ${{ steps.scopes.outputs.android }}
+      web: ${{ steps.scopes.outputs.web }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # 要比對 base 與 head，淺 clone 會找不到 merge-base
+          fetch-depth: 0
+      - id: scopes
+        run: .github/scripts/changed-scopes.sh
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
   tokens:
     name: Token 是否為最新
+    needs: scopes
+    if: needs.scopes.outputs.tokens == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,6 +54,8 @@ jobs:
 
   web:
     name: Web
+    needs: scopes
+    if: needs.scopes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -47,6 +74,8 @@ jobs:
 
   android:
     name: Android
+    needs: scopes
+    if: needs.scopes.outputs.android == 'true'
     runs-on: ubuntu-latest
     env:
       # Kotlin 的 backtick 測試名稱會產生含中文的 class 檔名
@@ -72,6 +101,8 @@ jobs:
 
   apple:
     name: Apple
+    needs: scopes
+    if: needs.scopes.outputs.apple == 'true'
     # SwiftUI + iOS 26 無法在 Linux 編譯，這個 job 一定要跑 macOS runner
     runs-on: macos-26
     steps:
