@@ -116,15 +116,18 @@ private extension LKChip {
 extension LKChip {
 
     /// 這個元件自己的版面數值，只放沒有對應 token 的尺寸
+    ///
+    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 
-        // MARK: - Properties
+        // MARK: - Computed Properties
 
         /// 上下各加這麼多外距，把 32pt 高的膠囊撐到 44pt 的命中區
-        static let hitAreaInset: CGFloat = 6
+        static var hitAreaInset: CGFloat { 6 }
 
         /// 尾端叉叉的大小，比一般行內圖示再小一點
-        static let removeIconSize: CGFloat = 11
+        static var removeIconSize: CGFloat { 11 }
     }
 }
 

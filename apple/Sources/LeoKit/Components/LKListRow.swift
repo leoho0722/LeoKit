@@ -161,12 +161,15 @@ private extension LKListRow {
 extension LKListRow {
 
     /// 這個元件自己的版面數值，只放沒有對應 token 的尺寸
+    ///
+    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 
-        // MARK: - Properties
+        // MARK: - Computed Properties
 
         /// 標題與副標題之間的距離，比 spacing-4 更窄，讓兩行讀起來是一組
-        static let titleSpacing: CGFloat = 2
+        static var titleSpacing: CGFloat { 2 }
     }
 }
 

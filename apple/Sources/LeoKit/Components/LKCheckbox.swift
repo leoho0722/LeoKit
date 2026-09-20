@@ -123,15 +123,18 @@ private extension LKCheckbox {
 extension LKCheckbox {
 
     /// 這個元件自己的版面數值，只放沒有對應 token 的尺寸
+    ///
+    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 
-        // MARK: - Properties
+        // MARK: - Computed Properties
 
         /// 方框往下推的距離，讓它對齊標籤的第一行
-        static let boxTopInset: CGFloat = 2
+        static var boxTopInset: CGFloat { 2 }
 
         /// 方框裡勾號與橫線的大小
-        static let markSize: CGFloat = 13
+        static var markSize: CGFloat { 13 }
     }
 }
 

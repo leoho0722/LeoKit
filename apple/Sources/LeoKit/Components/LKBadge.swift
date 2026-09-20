@@ -93,18 +93,21 @@ private extension LKBadge {
 extension LKBadge {
 
     /// 標記自己的版面數值，只放沒有對應 token 的尺寸
+    ///
+    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 
-        // MARK: - Properties
+        // MARK: - Computed Properties
 
         /// 小圓點的直徑
-        static let dotSize: CGFloat = 6
+        static var dotSize: CGFloat { 6 }
 
         /// 文字上下的內距，比 spacing-4 更窄，讓標記維持扁平
-        static let verticalPadding: CGFloat = 2
+        static var verticalPadding: CGFloat { 2 }
 
         /// 最小高度，讓長短不同的標記看起來一樣高
-        static let minHeight: CGFloat = 20
+        static var minHeight: CGFloat { 20 }
     }
 }
 

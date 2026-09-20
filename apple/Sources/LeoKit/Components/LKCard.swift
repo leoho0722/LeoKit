@@ -82,15 +82,18 @@ private extension LKCard {
 extension LKCard {
 
     /// 卡片自己的版面數值，只放沒有對應 token 的尺寸
+    ///
+    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 
-        // MARK: - Properties
+        // MARK: - Computed Properties
 
         /// 貼著背景時的陰影濃度
-        static let restingShadowOpacity = 0.06
+        static var restingShadowOpacity: Double { 0.06 }
 
         /// 明顯浮起時的陰影濃度
-        static let raisedShadowOpacity = 0.08
+        static var raisedShadowOpacity: Double { 0.08 }
     }
 }
 
