@@ -17,10 +17,22 @@ npm install @leoho0722/leokit
 import '@leoho0722/leokit/tokens.css';   // 自訂屬性與字級 class
 import '@leoho0722/leokit/leokit.css';   // 元件 class
 
-import { Button, ListRow, Banner, setTheme } from '@leoho0722/leokit';
+import { Button, List, ListRow, Banner, setTheme } from '@leoho0722/leokit';
 
 document.body.append(
-  ListRow({ title: 'Netflix 標準方案', subtitle: '每月 3 日扣款', value: 'NT$ 390', chevron: true }),
+  // ListRow 產出的是 <li>，一定要放進 List 裡
+  List({
+    children: [
+      ListRow({
+        title: 'Netflix 標準方案',
+        subtitle: '每月 3 日扣款',
+        value: 'NT$ 390',
+        // chevron 代表點下去會換頁，所以一定要搭配 onClick 或 href
+        chevron: true,
+        onClick: () => {},
+      }),
+    ],
+  }),
   Button({ label: '新增訂閱', onClick: () => {} }),
   Banner({
     title: 'Netflix 扣款失敗',

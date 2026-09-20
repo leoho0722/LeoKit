@@ -154,7 +154,8 @@
   border: 0; border-bottom: var(--hairline) solid var(--border-subtle);
   font-family: var(--font-sans);
 }
-.lk-row:last-child { border-bottom: 0; }
+.lk-row-item { display: block; }
+.lk-row-item:last-child > .lk-row { border-bottom: 0; }
 .lk-row--tappable { cursor: pointer; }
 .lk-row--tappable:hover { background: var(--bg-subtle); }
 .lk-row--tappable:active { background: var(--bg-inset); }

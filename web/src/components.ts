@@ -46,11 +46,23 @@ export function Button(options: ButtonOptions): HTMLButtonElement {
   );
 }
 
+/**
+ * 可及名稱的契約：`label` 與 `ariaLabel` 至少要給一個
+ *
+ * 只寫在註解裡的「必填」擋不住任何人 —— 寫進型別，漏給就是編譯錯誤。
+ * 有看得見的標籤時用 `label`，純圖示或標籤在別處時用 `ariaLabel`。
+ */
+export type WithAccessibleName<T> =
+  | (T & { label: string; ariaLabel?: string })
+  | (T & { label?: never; ariaLabel: string });
+
 /* -------------------------------- TextField -------------------------------- */
 
-export interface TextFieldOptions {
+export interface TextFieldFields {
   /** 永遠顯示在輸入框上方。不要用 placeholder 取代 label。 */
   label?: string;
+  /** 標籤放在元件外面時用這個命名輸入框。placeholder 不能當標籤。 */
+  ariaLabel?: string;
   placeholder?: string;
   value?: string;
   icon?: LKGlyph;
@@ -61,8 +73,14 @@ export interface TextFieldOptions {
   disabled?: boolean;
   type?: string;
   id?: string;
+  /** 每打一個字就呼叫，參數是當下的整段文字。 */
+  onInput?: (value: string) => void;
+  /** 失去焦點或按下 Enter 時呼叫，參數是當下的整段文字。 */
+  onChange?: (value: string) => void;
   class?: string;
 }
+
+export type TextFieldOptions = WithAccessibleName<TextFieldFields>;
 
 export function TextField(options: TextFieldOptions): HTMLDivElement {
   const id = options.id ?? uid('lk-field');
@@ -76,11 +94,19 @@ export function TextField(options: TextFieldOptions): HTMLDivElement {
       placeholder: options.placeholder,
       value: options.multiline ? null : options.value,
       disabled: options.disabled,
+      'aria-label': options.label ? null : options.ariaLabel,
       'aria-invalid': options.error ? 'true' : null,
       'aria-describedby': describedBy,
     } as Attrs,
     options.multiline && options.value ? [options.value] : [],
   );
+
+  // 其他互動元件都吐回呼，輸入框沒有的話呼叫端只能去摳 DOM
+  const report = (handler: (value: string) => void) => (): void => {
+    handler((input as HTMLInputElement | HTMLTextAreaElement).value);
+  };
+  if (options.onInput) input.addEventListener('input', report(options.onInput));
+  if (options.onChange) input.addEventListener('change', report(options.onChange));
 
   let below: HTMLElement | null = null;
   if (options.error) {
@@ -142,7 +168,12 @@ export interface ListRowOptions {
   icon?: LKGlyph;
   /** 尾端自訂元素，例如 Badge 或 switch。 */
   trailing?: Node;
-  /** 顯示 chevron 並讓整列可點。 */
+  /**
+   * 尾端畫一個往右的箭頭。
+   *
+   * 箭頭的意思是「點下去會換頁」，所以一定要搭配 `onClick` 或 `href`。
+   * 只給 chevron 會做出一個可聚焦、但點了沒反應的死列，建構時就擋掉。
+   */
   chevron?: boolean;
   href?: string;
   selected?: boolean;
@@ -150,7 +181,12 @@ export interface ListRowOptions {
   class?: string;
 }
 
-export function ListRow(options: ListRowOptions): HTMLElement {
+export function ListRow(options: ListRowOptions): HTMLLIElement {
+  const tappable = Boolean(options.onClick || options.href);
+  if (options.chevron && !tappable) {
+    throw new Error('ListRow：chevron 代表點下去會換頁，必須同時給 onClick 或 href');
+  }
+
   const body: Child[] = [h('span', { class: 'lk-row__title headline', text: options.title })];
   if (options.subtitle) body.push(h('span', { class: 'lk-row__sub footnote', text: options.subtitle }));
 
@@ -159,11 +195,11 @@ export function ListRow(options: ListRowOptions): HTMLElement {
   if (options.trailing) trail.push(options.trailing);
   if (options.chevron) trail.push(icon('chevron', 'lk-row__chevron'));
 
-  const tappable = Boolean(options.onClick || options.href || options.chevron);
-  const tag = options.href ? 'a' : tappable ? 'button' : 'li';
-
-  return h(
-    tag as 'a' | 'button' | 'li',
+  // 列本體不能直接當 <ul> 的子節點：<ul> 只收 <li>，塞 <button> 進去閱讀器
+  // 就不會把它算成清單項目（「清單，共 5 項」會消失）。一律包一層 <li>。
+  const tag = options.href ? 'a' : options.onClick ? 'button' : 'div';
+  const inner = h(
+    tag as 'a' | 'button' | 'div',
     {
       class: cx('lk-row', tappable && 'lk-row--tappable', options.selected && 'lk-row--selected', options.class),
       href: options.href,
@@ -177,6 +213,8 @@ export function ListRow(options: ListRowOptions): HTMLElement {
       trail.length ? h('span', { class: 'lk-row__trail' }, trail) : null,
     ],
   );
+
+  return h('li', { class: 'lk-row-item' }, [inner]);
 }
 
 /* ---------------------------------- Badge ---------------------------------- */
@@ -257,8 +295,8 @@ export function Banner(options: BannerOptions): HTMLDivElement {
 /** Checkbox 的三種狀態。`'mixed'` 是父項部分選取，方框顯示橫線而非勾。 */
 export type CheckedState = boolean | 'mixed';
 
-export interface ChoiceOptions {
-  /** 可換行；方框對齊第一行。沒有 label 時必填 `ariaLabel`。 */
+export interface ChoiceFields {
+  /** 可換行；方框對齊第一行。 */
   label?: string;
   /** 標籤下方的一行說明。 */
   description?: string;
@@ -266,11 +304,14 @@ export interface ChoiceOptions {
   /** Radio 用：這個選項代表的值，會原封不動傳給 `onChange`。 */
   value?: string;
   disabled?: boolean;
+  /** 沒有看得見的標籤時用這個命名選項。 */
   ariaLabel?: string;
   /** Checkbox 收到新的勾選狀態；Radio 收到 `value`。 */
   onChange?: (next: boolean | string) => void;
   class?: string;
 }
+
+export type ChoiceOptions = WithAccessibleName<ChoiceFields>;
 
 function choice(options: ChoiceOptions, kind: 'checkbox' | 'radio'): HTMLButtonElement {
   const mark =
@@ -330,8 +371,8 @@ export interface ChoiceGroupOptions {
   children: Node[];
   /** Radio 群組必填 true —— 互斥行為與 `role="radiogroup"` 都由容器提供。 */
   radio?: boolean;
-  /** 說明這一組在選什麼，必填。 */
-  ariaLabel?: string;
+  /** 說明這一組在選什麼。群組沒有看得見的標題，所以是必填。 */
+  ariaLabel: string;
   class?: string;
 }
 
@@ -350,16 +391,19 @@ export function ChoiceGroup(options: ChoiceGroupOptions): HTMLDivElement {
 
 /* ---------------------------------- Toggle --------------------------------- */
 
-export interface ToggleOptions {
-  /** 寫「開啟後會發生什麼」的肯定句。沒有 label 時必填 `ariaLabel`。 */
+export interface ToggleFields {
+  /** 寫「開啟後會發生什麼」的肯定句。 */
   label?: string;
   checked?: boolean;
   fullWidth?: boolean;
   disabled?: boolean;
+  /** 放在列尾、說明文字交給那一列時用這個命名開關。 */
   ariaLabel?: string;
   onChange?: (next: boolean) => void;
   class?: string;
 }
+
+export type ToggleOptions = WithAccessibleName<ToggleFields>;
 
 /** 開關一個立即生效的設定。狀態由呼叫端持有，元件不自己記。 */
 export function Toggle(options: ToggleOptions): HTMLButtonElement {
@@ -1042,8 +1086,8 @@ export interface ProgressOptions {
   /** 0–100。省略就是「不知道還要多久」的不確定狀態。 */
   value?: number;
   tone?: 'brand' | 'success';
-  /** 說明在進行什麼，必填。 */
-  ariaLabel?: string;
+  /** 說明在進行什麼。進度條沒有看得見的標籤，所以是必填。 */
+  ariaLabel: string;
   class?: string;
 }
 
@@ -1193,8 +1237,9 @@ export interface SliderOptions {
   max?: number;
   step?: number;
   value?: number;
-  /** 沒有 label 時必填 `ariaLabel`。 */
+  /** 看得見的標籤，會用 `for` 關聯到滑桿本體。 */
   label?: string;
+  /** 沒有看得見的標籤時用這個命名滑桿。 */
   ariaLabel?: string;
   /** 把數字轉成看得懂的文字，例如加上幣別。同時會寫進 `aria-valuetext`。 */
   format?: (value: number) => string;
@@ -1207,6 +1252,7 @@ export interface SliderOptions {
 
 /** 在一個連續範圍裡挑一個值。用原生 `input[type=range]`，鍵盤與閱讀器行為免費取得。 */
 export function Slider(options: SliderOptions): HTMLDivElement {
+  const id = uid('lk-slider');
   const min = options.min ?? 0;
   const max = options.max ?? 100;
   const value = options.value ?? min;
@@ -1218,6 +1264,7 @@ export function Slider(options: SliderOptions): HTMLDivElement {
     'aria-hidden': 'true',
   });
   const input = h('input', {
+    id,
     type: 'range',
     class: cx('lk-slider', options.tone === 'success' && 'lk-slider--success'),
     min: String(min),
@@ -1245,7 +1292,9 @@ export function Slider(options: SliderOptions): HTMLDivElement {
   paint(value);
 
   return h('div', { class: cx('lk-slider-field', options.class) }, [
-    options.label ? h('label', { class: 'lk-field__label subhead', text: options.label }) : null,
+    options.label
+      ? h('label', { class: 'lk-field__label subhead', for: id, text: options.label } as Attrs)
+      : null,
     h('div', { class: 'lk-slider-row' }, [input, output]),
     options.help ? h('div', { class: 'lk-field__help footnote', text: options.help }) : null,
   ]);
@@ -1258,8 +1307,8 @@ export interface StepperOptions {
   min?: number;
   max?: number;
   step?: number;
-  /** 說明在調整什麼，必填。 */
-  ariaLabel?: string;
+  /** 說明在調整什麼。加減鈕之間只有一個數字，所以是必填。 */
+  ariaLabel: string;
   decreaseLabel?: string;
   increaseLabel?: string;
   onChange?: (value: number) => void;

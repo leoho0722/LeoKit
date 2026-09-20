@@ -50,9 +50,11 @@ export {
   Combobox,
 } from './components.js';
 export type {
+  WithAccessibleName,
   ButtonOptions,
   ButtonVariant,
   ControlSize,
+  TextFieldFields,
   TextFieldOptions,
   CardOptions,
   CardElevation,
@@ -63,8 +65,10 @@ export type {
   BannerOptions,
   BannerTone,
   CheckedState,
+  ChoiceFields,
   ChoiceOptions,
   ChoiceGroupOptions,
+  ToggleFields,
   ToggleOptions,
   SegmentedItem,
   SegmentedControlOptions,

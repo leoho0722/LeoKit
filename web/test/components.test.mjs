@@ -47,6 +47,44 @@ test('TextField：label 與 input 以 for/id 綁定', () => {
   assert.notEqual(input.id, '');
 });
 
+test('TextField：沒有 label 時用 ariaLabel 命名輸入框', () => {
+  const field = TextField({ ariaLabel: '搜尋訂閱', placeholder: '搜尋' });
+  const input = field.querySelector('input');
+  assert.equal(field.querySelector('label'), null);
+  // placeholder 一打字就消失，不能當標籤用
+  assert.equal(input.getAttribute('aria-label'), '搜尋訂閱');
+});
+
+test('TextField：onInput 逐字回報、onChange 在 change 時回報', () => {
+  const typed = [];
+  const committed = [];
+  const field = TextField({
+    label: '服務名稱',
+    onInput: (v) => typed.push(v),
+    onChange: (v) => committed.push(v),
+  });
+  const input = field.querySelector('input');
+
+  input.value = 'Net';
+  input.dispatchEvent(new window.Event('input'));
+  input.value = 'Netflix';
+  input.dispatchEvent(new window.Event('input'));
+  assert.deepEqual(typed, ['Net', 'Netflix']);
+  assert.deepEqual(committed, []);
+
+  input.dispatchEvent(new window.Event('change'));
+  assert.deepEqual(committed, ['Netflix']);
+});
+
+test('TextField：multiline 也吐同樣的回呼', () => {
+  const seen = [];
+  const field = TextField({ label: '備註', multiline: true, onInput: (v) => seen.push(v) });
+  const area = field.querySelector('textarea');
+  area.value = '記一下';
+  area.dispatchEvent(new window.Event('input'));
+  assert.deepEqual(seen, ['記一下']);
+});
+
 test('TextField：錯誤態同時設 aria-invalid、describedby 與 lk-field--error', () => {
   const field = TextField({ label: '每期金額', value: '0', error: '金額需大於 0，請重新輸入。', help: '被覆蓋' });
   const input = field.querySelector('input');
@@ -73,28 +111,48 @@ test('Card：elevation 與修飾類', () => {
   assert.match(Card({ flush: true, selected: true }).className, /lk-card--flush.*lk-card--selected/);
 });
 
-test('ListRow：可點時是 button 並有 chevron，不可點時是 li', () => {
-  const tappable = ListRow({ title: 'Netflix 標準方案', subtitle: '每月 3 日扣款', value: 'NT$ 390', chevron: true });
-  assert.equal(tappable.tagName, 'BUTTON');
-  assert.match(tappable.className, /lk-row--tappable/);
-  assert.ok(tappable.querySelector('.lk-row__chevron'));
+test('ListRow：一律包在 li 裡，可點的那層才是 button', () => {
+  const row = ListRow({
+    title: 'Netflix 標準方案',
+    subtitle: '每月 3 日扣款',
+    value: 'NT$ 390',
+    chevron: true,
+    onClick: () => {},
+  });
+  assert.equal(row.tagName, 'LI');
+  const inner = row.firstElementChild;
+  assert.equal(inner.tagName, 'BUTTON');
+  assert.match(inner.className, /lk-row--tappable/);
+  assert.ok(inner.querySelector('.lk-row__chevron'));
 
   const plain = ListRow({ title: '合計', value: 'NT$ 2,480' });
   assert.equal(plain.tagName, 'LI');
-  assert.doesNotMatch(plain.className, /lk-row--tappable/);
+  assert.equal(plain.firstElementChild.tagName, 'DIV');
+  assert.doesNotMatch(plain.firstElementChild.className, /lk-row--tappable/);
+});
+
+test('ListRow：只給 chevron 不給動作會直接擋下來，不做出死按鈕', () => {
+  assert.throws(() => ListRow({ title: '設定', chevron: true }), /chevron/);
+  assert.doesNotThrow(() => ListRow({ title: '設定', chevron: true, href: '/settings' }));
 });
 
 test('ListRow：href 會產生連結', () => {
-  const link = ListRow({ title: '說明', href: '/help' });
+  const row = ListRow({ title: '說明', href: '/help' });
+  assert.equal(row.tagName, 'LI');
+  const link = row.firstElementChild;
   assert.equal(link.tagName, 'A');
   assert.equal(link.getAttribute('href'), '/help');
 });
 
-test('List：是 ul 且 role=list', () => {
-  const list = List({ children: [ListRow({ title: 'a' })] });
+test('List：是 ul 且 role=list，子節點一律是 li', () => {
+  const list = List({
+    children: [ListRow({ title: 'a' }), ListRow({ title: 'b', href: '/b' })],
+  });
   assert.equal(list.tagName, 'UL');
   assert.equal(list.getAttribute('role'), 'list');
-  assert.equal(list.children.length, 1);
+  assert.equal(list.children.length, 2);
+  // <ul> 只收 <li>，塞 <button> 進去閱讀器就不會把它算成清單項目
+  for (const child of list.children) assert.equal(child.tagName, 'LI');
 });
 
 test('Badge：tone 對應 class，且文字一定存在', () => {
@@ -500,8 +558,15 @@ test('Slider 用原生 range，format 同時寫進 aria-valuetext 與旁邊的�
   assert.equal(input.style.getPropertyValue('--lk-pct'), '75%');
 });
 
-test('Slider 有 label 時不重複標記，沒有時用 ariaLabel', () => {
-  assert.equal(Slider({ label: '預算' }).querySelector('input').getAttribute('aria-label'), null);
+test('Slider 的可及名稱：有 label 就用 for/id 綁，沒有才用 ariaLabel', () => {
+  const withLabel = Slider({ label: '預算' });
+  const input = withLabel.querySelector('input');
+  const label = withLabel.querySelector('label');
+  assert.equal(input.getAttribute('aria-label'), null);
+  // 只有視覺標籤而沒有關聯的話，滑桿其實是沒有名字的
+  assert.notEqual(input.id, '');
+  assert.equal(label.getAttribute('for'), input.id);
+
   assert.equal(Slider({ ariaLabel: '預算' }).querySelector('input').getAttribute('aria-label'), '預算');
 });
 
