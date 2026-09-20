@@ -124,7 +124,7 @@ extension LKCheckbox {
 
     /// 這個元件自己的版面數值，只放沒有對應 token 的尺寸
     ///
-    /// - Note: 一律 computed 不用 stored —— `Layout` 巢狀在泛型型別裡時
+    /// - Note: 一律 computed 不用 stored：`Layout` 巢狀在泛型型別裡時
     ///   static stored property 不合法，八個元件統一寫法才不用每次判斷
     private enum Layout {
 

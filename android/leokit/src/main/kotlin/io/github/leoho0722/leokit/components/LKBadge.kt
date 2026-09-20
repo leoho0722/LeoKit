@@ -45,7 +45,7 @@ public enum class LKBadgeTone {
  * 不能點的狀態標記，例如「已發布」或未讀數量。
  *
  * 要讓使用者點的標籤請改用 Chip。
- * [label] 必須自己說明狀態，因為有些人看不出顏色的差別 ——
+ * [label] 必須自己說明狀態，因為有些人看不出顏色的差別：
  * success 與 danger 在紅綠色盲視角下接近同色。
  *
  * @param label 標記上的文字，要能單獨說明狀態

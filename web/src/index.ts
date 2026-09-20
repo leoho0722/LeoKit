@@ -1,5 +1,5 @@
 /**
- * LeoKit — Web 實作層
+ * LeoKit：Web 實作層
  *
  * 一份語意 token 來源，三種原生實作。這個套件是其中的 Web 端。
  * 樣式分成兩層：tokens.generated.css（自訂屬性與字級 class）與 leokit.css（元件 class）。

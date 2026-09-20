@@ -16,7 +16,7 @@ import io.github.leoho0722.leokit.LKTheme
  * App 的主導覽：在 3 到 5 個平行的頂層區塊之間切換。
  *
  * 用 Material 的 `NavigationBar`，選中項那個膠囊形狀的 indicator 是 Material 的 state layer，
- * 不要拿掉 —— 它是「現在在哪一區」除了顏色之外的第二個線索。
+ * 不要拿掉：它是「現在在哪一區」除了顏色之外的第二個線索。
  * 超過 5 個頂層區塊時不要塞進來，改用 `NavigationDrawer`。
  * 導覽狀態由呼叫端（或平台的導覽器）持有，這個元件不自己記。
  *

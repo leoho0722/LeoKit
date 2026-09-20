@@ -19,7 +19,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
 /**
  * 由下往上推出的面板。
  *
- * 用 Material 的 `ModalBottomSheet`，把手、拖曳關閉與預測性返回手勢都由它處理 ——
+ * 用 Material 的 `ModalBottomSheet`，把手、拖曳關閉與預測性返回手勢都由它處理：
  * 自繪會失去這些行為。
  * 破壞性的選擇不要用面板，改用 [LKDialog]。
  * 標題會被朗讀成這個面板的名稱，所以即使視覺上不需要也建議給。

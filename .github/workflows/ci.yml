@@ -111,7 +111,7 @@ jobs:
         run: swift --version
 
       # 這個套件只支援 iOS。`swift build` 一律編給 host，在 macOS runner 上
-      # 會在 `import UIKit` 爆掉 —— 要編 iOS 只能走 xcodebuild 指定 destination。
+      # 會在 `import UIKit` 爆掉；要編 iOS 只能走 xcodebuild 指定 destination。
       - name: 挑一台 iOS 模擬器
         id: sim
         run: |

@@ -38,7 +38,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /**
  * 介面內部用的功能性字形。
- * 這不是 LeoKit 的圖示集 —— 產品圖示請用 SF Symbols / Material Symbols / Lucide。
+ * 這不是 LeoKit 的圖示集；產品圖示請用 SF Symbols / Material Symbols / Lucide。
  */
 export const glyphs = {
   chevron: 'M9 6l6 6-6 6',

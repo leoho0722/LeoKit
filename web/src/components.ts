@@ -49,7 +49,7 @@ export function Button(options: ButtonOptions): HTMLButtonElement {
 /**
  * 可及名稱的契約：`label` 與 `ariaLabel` 至少要給一個
  *
- * 只寫在註解裡的「必填」擋不住任何人 —— 寫進型別，漏給就是編譯錯誤。
+ * 只寫在註解裡的「必填」擋不住任何人：寫進型別，漏給就是編譯錯誤。
  * 有看得見的標籤時用 `label`，純圖示或標籤在別處時用 `ariaLabel`。
  */
 export type WithAccessibleName<T> =
@@ -222,7 +222,7 @@ export function ListRow(options: ListRowOptions): HTMLLIElement {
 export type BadgeTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'count';
 
 export interface BadgeOptions {
-  /** 狀態必須由文字說明 —— 顏色只是加速辨識。 */
+  /** 狀態必須由文字說明：顏色只是加速辨識。 */
   label: string;
   tone?: BadgeTone;
   icon?: LKGlyph;
@@ -369,7 +369,7 @@ export function Radio(options: ChoiceOptions): HTMLButtonElement {
 
 export interface ChoiceGroupOptions {
   children: Node[];
-  /** Radio 群組必填 true —— 互斥行為與 `role="radiogroup"` 都由容器提供。 */
+  /** Radio 群組必填 true：互斥行為與 `role="radiogroup"` 都由容器提供。 */
   radio?: boolean;
   /** 說明這一組在選什麼。群組沒有看得見的標題，所以是必填。 */
   ariaLabel: string;

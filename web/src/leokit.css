@@ -1,4 +1,4 @@
-/* LeoKit — 元件樣式層。
+/* LeoKit：元件樣式層。
    所有色值、間距、圓角來自 tokens.generated.css 的自訂屬性，這裡沒有任何寫死的值。
    字級由 tokens.generated.css 產生的 type style class 提供，請在標記上一併組合：
      <button class="lk-btn lk-btn--primary label">儲存</button> */

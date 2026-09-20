@@ -24,7 +24,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
 /**
  * 列表裡的一列。
  *
- * 標題與副標題都只有一行，放不下就以省略號截斷 —— 需要多行的內容不該用這個元件。
+ * 標題與副標題都只有一行，放不下就以省略號截斷；需要多行的內容不該用這個元件。
  * 有 [onClick] 就是可點的列，整列都是命中區。
  * 列上有開關時不要再讓整列可點：開關自己是唯一的命中區。
  *
@@ -51,7 +51,7 @@ public fun LKListRow(
     onClick: (() -> Unit)? = null,
 ) {
     // 箭頭的意思是「點下去會換頁」。只畫箭頭卻沒掛 onClick 的話，
-    // 這一列看起來可點、點了卻沒反應 —— 與其讓它出貨，不如組出來就擋掉。
+    // 這一列看起來可點、點了卻沒反應；與其讓它出貨，不如組出來就擋掉。
     require(!showChevron || onClick != null) {
         "LKListRow：showChevron 代表點下去會換頁，必須同時給 onClick"
     }

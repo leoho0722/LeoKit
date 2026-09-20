@@ -1,4 +1,4 @@
-# LeoKit — iOS
+# LeoKit：iOS
 
 `Package.swift` 在 repo 根目錄，不在這個資料夾裡：SwiftPM 不支援從 git URL 解析子目錄裡的套件，
 manifest 必須在根目錄。這裡只放原始碼，manifest 的 `path` 指過來。

@@ -11,8 +11,8 @@ import SwiftUI
 ///
 /// - Note: iOS 沒有 snackbar，所以這是自繪的；成功回饋請優先考慮就地更新畫面加觸覺回饋，這是次選
 /// - Note: 它不搶焦點。顯示時機、排隊與自動消失由呼叫端管理，通常放在 `.overlay(alignment: .bottom)`
-/// - Note: 成功不換色，狀態靠文字說明 —— 反轉面上的狀態色對比不足，不要拿 success 當前景色
-/// - Note: 帶動作時，那個動作必須也能從別處觸達 —— 鍵盤使用者可能來不及碰到它
+/// - Note: 成功不換色，狀態靠文字說明：反轉面上的狀態色對比不足，不要拿 success 當前景色
+/// - Note: 帶動作時，那個動作必須也能從別處觸達：鍵盤使用者可能來不及碰到它
 /// - Note: 錯誤要讓螢幕閱讀器立刻讀出來時，由呼叫端發 `AccessibilityNotification.Announcement`
 public struct LKToast: View {
 

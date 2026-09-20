@@ -26,7 +26,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
 /**
  * 一個看起來像輸入框、按下去會打開原生選擇器的欄位。
  *
- * 這個元件只是「欄位」。它不持有值，也不自己彈出任何東西 ——
+ * 這個元件只是「欄位」。它不持有值，也不自己彈出任何東西：
  * 選擇面請用 `ExposedDropdownMenuBox`、`DatePickerDialog` 或 [LKCombobox]。
  * 日期與時間一律用平台原生選擇器：時區、農曆、週起始日與語系格式系統都處理好了。
  * [value] 傳已經格式化好的字串，格式化規則屬於呼叫端的業務邏輯。

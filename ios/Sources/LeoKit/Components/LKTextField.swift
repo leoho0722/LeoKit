@@ -81,7 +81,7 @@ private extension LKTextField {
 
     /// 輸入框上方的標籤，沒給時不佔位置
     ///
-    /// - Note: 對 VoiceOver 隱藏 —— 它已經是輸入框自己的名稱了，再唸一次是重複
+    /// - Note: 對 VoiceOver 隱藏：它已經是輸入框自己的名稱了，再唸一次是重複
     @ViewBuilder
     var labelText: some View {
         if let label {

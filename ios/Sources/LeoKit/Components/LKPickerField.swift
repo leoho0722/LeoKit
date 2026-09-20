@@ -9,7 +9,7 @@ import SwiftUI
 
 /// 一個看起來像輸入框、按下去會打開原生選擇器的欄位
 ///
-/// - Note: 這個元件只是「欄位」。它不持有值，也不自己彈出任何東西 ——
+/// - Note: 這個元件只是「欄位」。它不持有值，也不自己彈出任何東西：
 ///   選擇面一律交給系統的 `Picker`、`DatePicker` 或 `LKCombobox`
 /// - Note: 日期與時間一律用平台原生選擇器，時區、農曆、週起始日與語系格式系統都處理好了
 /// - Note: `value` 傳已經格式化好的字串；格式化規則屬於呼叫端的業務邏輯
@@ -90,7 +90,7 @@ private extension LKPickerField {
 
     /// 欄位上方的標籤
     ///
-    /// - Note: 對 VoiceOver 隱藏 —— 它已經是欄位本身的名稱了，再唸一次是重複
+    /// - Note: 對 VoiceOver 隱藏：它已經是欄位本身的名稱了，再唸一次是重複
     var titleText: some View {
         Text(title)
             .font(LKFont.subhead)

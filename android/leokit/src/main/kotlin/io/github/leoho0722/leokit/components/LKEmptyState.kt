@@ -23,7 +23,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
  *
  * Material 沒有對等元件，所以這是自繪的。
  * 標題用一句陳述加一個動作，不要只寫「沒有資料」。
- * 空狀態不是錯誤 —— 真的出錯請用 [LKBanner]，不要把錯誤畫成空狀態。
+ * 空狀態不是錯誤；真的出錯請用 [LKBanner]，不要把錯誤畫成空狀態。
  * 最多兩個動作，第一個是主要動作。
  *
  * @param title 一句陳述，說明現在沒有什麼

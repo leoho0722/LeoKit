@@ -18,7 +18,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
 /**
  * 可以打字過濾的選擇清單。
  *
- * 行動端刻意不做下拉面板 —— 小螢幕上的下拉選項很難按。這裡用展開的 `SearchBar`。
+ * 行動端刻意不做下拉面板：小螢幕上的下拉選項很難按。這裡用展開的 `SearchBar`。
  * 入口請用 [LKPickerField]，把這個放進展開的搜尋畫面。
  * 過濾在元件內做；非同步搜尋時由呼叫端替換 [options] 並自行處理載入狀態。
  * 選了就關閉，所以 [onSelect] 之後由呼叫端負責收掉搜尋畫面。

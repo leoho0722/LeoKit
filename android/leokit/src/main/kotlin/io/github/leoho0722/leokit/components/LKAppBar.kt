@@ -13,7 +13,7 @@ import io.github.leoho0722.leokit.LKTheme
  * 畫面最上方的列：標題、返回，以及這個畫面層級的動作。
  *
  * Android 的標題一律靠左，這是平台慣例，不要為了跟 iOS 一致而置中。
- * 返回鍵在 Android 是輔助 —— 主要還是靠系統的返回手勢，所以 [navigationIcon] 可以不給。
+ * 返回鍵在 Android 是輔助： 主要還是靠系統的返回手勢，所以 [navigationIcon] 可以不給。
  * 安全區的上內距由 `Scaffold` 處理，這個元件不處理。
  * 標題列最多放兩個圖示動作，更多請收進 [LKMenu]。
  *

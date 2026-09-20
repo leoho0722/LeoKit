@@ -4,7 +4,7 @@
 #
 # 分流規則（由上往下第一個命中者為準）：
 #   *.md                   純文件，不算進任何範圍
-#   ios/、Package.swift    ios —— manifest 得放在根目錄，但它屬於 iOS 套件
+#   ios/、Package.swift    ios：manifest 得放在根目錄，但它屬於 iOS 套件
 #   android/               android
 #   web/                   web
 #   其他                   全跑（tokens/、.github/、根目錄設定檔…）

@@ -15,7 +15,7 @@ import io.github.leoho0722.leokit.LKTheme
  * `snackbarHost`，然後用 `SnackbarHostState.showSnackbar()` 顯示。
  * 排隊與自動消失都由 `SnackbarHostState` 管，這個元件只負責外觀。
  * 回饋不搶焦點；帶動作時那個動作必須也能從別處觸達，因為鍵盤使用者可能來不及碰到它。
- * 狀態要靠文字說明 —— 反轉面上的狀態色對比不足，不要拿 success 當前景色。
+ * 狀態要靠文字說明：反轉面上的狀態色對比不足，不要拿 success 當前景色。
  *
  * @param hostState 由呼叫端建立並持有的 Snackbar 狀態
  * @param modifier 由呼叫端套在整個容器上的修飾子

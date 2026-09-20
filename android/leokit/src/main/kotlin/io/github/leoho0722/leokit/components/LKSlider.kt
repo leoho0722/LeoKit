@@ -21,7 +21,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
  * 在一個連續範圍裡挑一個值。
  *
  * 用 Material 的 `Slider`，拖曳手感與輔助使用行為都由它提供。
- * 目前的值一定要用文字顯示在旁邊 —— 只有把手位置的滑桿沒有人看得懂。
+ * 目前的值一定要用文字顯示在旁邊：只有把手位置的滑桿沒有人看得懂。
  * 精確的數字用 [LKTextField] 或 [LKStepper]，滑桿適合「大概多少」的調整。
  * [format] 同時會寫進 `stateDescription`，所以請回傳帶單位的文字。
  *

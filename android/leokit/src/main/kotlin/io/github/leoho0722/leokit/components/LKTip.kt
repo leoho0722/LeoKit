@@ -23,7 +23,7 @@ import io.github.leoho0722.leokit.tokens.LKSpacing
  * 功能發現提示：告訴使用者「這裡還能做什麼」。
  *
  * Material 沒有對等元件，所以這是自繪的。
- * 提示不搶焦點 —— 它是補充資訊，不是需要處理的事情。
+ * 提示不搶焦點：它是補充資訊，不是需要處理的事情。
  * 關閉鈕的文字要說清楚後果（「不再顯示這個提示」而不是「關閉」），因為按下去是永久的。
  * 要不要顯示請先問 [lkTipShouldShow]，顯示與關閉之後把新的 [LKTipRecord] 存進 DataStore。
  *
@@ -114,7 +114,7 @@ public data class LKTipRecord(
  * 這個提示現在該不該顯示。
  *
  * 判斷邏輯刻意與 Web 的 `tipShouldShow` 一致，方便跨平台對照。
- * 讀不到狀態時傳預設的 [LKTipRecord] 進來就好 —— 寧可多顯示一次，也不要該顯示卻不顯示。
+ * 讀不到狀態時傳預設的 [LKTipRecord] 進來就好： 寧可多顯示一次，也不要該顯示卻不顯示。
  *
  * @param rule 這個提示的顯示規則
  * @param record 這個提示到目前為止的狀態

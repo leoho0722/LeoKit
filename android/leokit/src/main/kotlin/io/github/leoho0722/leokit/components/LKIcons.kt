@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 /**
  * 介面內部用的功能性字形。
  *
- * 這不是 LeoKit 的圖示集 —— 產品圖示請用 Material Symbols（Rounded、weight 400）。
+ * 這不是 LeoKit 的圖示集；產品圖示請用 Material Symbols（Rounded、weight 400）。
  * 這裡只放元件自己需要的幾個形狀，讓函式庫不必相依整包圖示。
  * 描邊固定黑色，實際顏色由 Icon 的 tint 決定。
  */
