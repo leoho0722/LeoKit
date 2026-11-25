@@ -648,6 +648,41 @@ test('Combobox 打字會過濾選項，選了之後回報 value 並收起面板'
   field.remove();
 });
 
+test('Combobox 用 aria-activedescendant 指向目前選項，選項不進 Tab 順序，失焦就收起', () => {
+  const field = Combobox({
+    label: '服務',
+    options: [
+      { label: 'Netflix', value: 'netflix' },
+      { label: 'Spotify', value: 'spotify' },
+    ],
+  });
+  document.body.appendChild(field);
+  const input = field.querySelector('input[role="combobox"]');
+  const panel = field.querySelector('[role="listbox"]');
+
+  input.dispatchEvent(new window.Event('focus'));
+  const options = panel.querySelectorAll('[role="option"]');
+  for (const option of options) {
+    assert.equal(option.getAttribute('tabindex'), '-1', '焦點留在輸入框，選項不能被 Tab 到');
+    assert.notEqual(option.id, '');
+  }
+  assert.equal(input.getAttribute('aria-activedescendant'), null, '還沒移動時不指向任何選項');
+
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown' }));
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown' }));
+  assert.equal(input.getAttribute('aria-activedescendant'), options[1].id);
+
+  // 重新過濾後選項會重建，舊的 activedescendant 不能留著指到同 id 的新選項
+  input.value = 'net';
+  input.dispatchEvent(new window.Event('input'));
+  assert.equal(input.getAttribute('aria-activedescendant'), null);
+
+  input.dispatchEvent(new window.Event('blur'));
+  assert.equal(panel.hidden, true, '失焦要收起面板');
+  assert.equal(input.getAttribute('aria-expanded'), 'false');
+  field.remove();
+});
+
 test('Combobox 沒有符合選項時顯示 emptyText，方向鍵會在選項間繞回', () => {
   const field = Combobox({
     options: [
@@ -675,4 +710,220 @@ test('Combobox 沒有符合選項時顯示 emptyText，方向鍵會在選項間�
   input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
   assert.equal(panel.hidden, true);
   field.remove();
+});
+
+/* ------------------------------ 鍵盤與焦點群組 ------------------------------ */
+
+const key = (target, name) =>
+  target.dispatchEvent(new window.KeyboardEvent('keydown', { key: name, bubbles: true }));
+
+test('Tabs 只佔一個 Tab 停駐點，左右鍵移動焦點並讓選取跟著走，頭尾相接', () => {
+  const seen = [];
+  const tabs = Tabs({
+    ariaLabel: '訂閱分類',
+    value: 'todo',
+    items: [
+      { label: '全部', value: 'all' },
+      { label: '待處理', value: 'todo' },
+      { label: '已取消', value: 'cancelled' },
+    ],
+    onChange: (v) => seen.push(v),
+  });
+  document.body.appendChild(tabs);
+  const [all, todo, cancelled] = tabs.children;
+  assert.deepEqual(Array.from(tabs.children, (c) => c.tabIndex), [-1, 0, -1], '從外面 Tab 進來要落在已選的 tab');
+
+  todo.focus();
+  key(todo, 'ArrowRight');
+  assert.equal(document.activeElement, cancelled);
+  assert.equal(cancelled.getAttribute('aria-selected'), 'true');
+  key(cancelled, 'ArrowRight');
+  assert.equal(document.activeElement, all, '最後一個再往右回到第一個');
+  key(all, 'End');
+  assert.equal(document.activeElement, cancelled);
+  assert.deepEqual(seen, ['cancelled', 'all', 'cancelled']);
+  assert.deepEqual(Array.from(tabs.children, (c) => c.tabIndex), [-1, -1, 0], 'Tab 停駐點跟著選取移動');
+  tabs.remove();
+});
+
+test('Tabs 點擊或聚焦已選的那一項不會重複回報', () => {
+  const seen = [];
+  const tabs = Tabs({ items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }], onChange: (v) => seen.push(v) });
+  document.body.appendChild(tabs);
+  tabs.children[0].focus();
+  tabs.children[0].dispatchEvent(new window.MouseEvent('click'));
+  assert.deepEqual(seen, []);
+  tabs.children[1].dispatchEvent(new window.MouseEvent('click'));
+  assert.deepEqual(seen, ['b']);
+  tabs.remove();
+});
+
+test('SegmentedControl 與 Tabs 一樣可以用方向鍵切換', () => {
+  const seen = [];
+  const seg = SegmentedControl({
+    ariaLabel: '訂閱狀態',
+    items: [{ label: '全部', value: 'all' }, { label: '使用中', value: 'active' }],
+    onChange: (v) => seen.push(v),
+  });
+  document.body.appendChild(seg);
+  assert.equal(seg.children[0].getAttribute('role'), 'tab');
+  seg.children[0].focus();
+  key(seg.children[0], 'ArrowLeft');
+  assert.equal(document.activeElement, seg.children[1], '第一個再往左回到最後一個');
+  assert.deepEqual(seen, ['active']);
+  seg.remove();
+});
+
+test('Radio 群組只佔一個 Tab 停駐點，方向鍵移動並同時選取，跳過停用的選項', () => {
+  const picked = [];
+  const group = ChoiceGroup({
+    radio: true,
+    ariaLabel: '付款週期',
+    children: [
+      Radio({ label: '月繳', value: 'monthly', onChange: (v) => picked.push(v) }),
+      Radio({ label: '季繳', value: 'quarterly', disabled: true, onChange: (v) => picked.push(v) }),
+      Radio({ label: '年繳', value: 'yearly', checked: true, onChange: (v) => picked.push(v) }),
+    ],
+  });
+  document.body.appendChild(group);
+  const [monthly, quarterly, yearly] = group.querySelectorAll('.lk-choice--radio');
+  assert.equal(yearly.tabIndex, 0, 'Tab 進來要落在已選的那一項');
+  assert.equal(monthly.tabIndex, -1);
+
+  yearly.focus();
+  key(yearly, 'ArrowDown');
+  assert.equal(document.activeElement, monthly, '頭尾相接，並跳過停用的季繳');
+  assert.equal(monthly.getAttribute('aria-checked'), 'true');
+  assert.equal(yearly.getAttribute('aria-checked'), 'false');
+  assert.equal(quarterly.getAttribute('aria-checked'), 'false');
+  assert.deepEqual(picked, ['monthly']);
+  assert.equal(monthly.tabIndex, 0, '選了新的之後 Tab 停駐點跟著移過去');
+  assert.equal(yearly.tabIndex, -1);
+  group.remove();
+});
+
+test('Menu 上下鍵在項目間移動、跳過停用項；群組標題之後的項目包成具名的 role="group"', () => {
+  const menu = Menu({
+    ariaLabel: '更多動作',
+    items: [
+      { label: '編輯' },
+      { label: '封存', disabled: true },
+      { separator: true },
+      { group: '扣款週期' },
+      { label: '每月', checked: true },
+      { label: '每年', checked: false },
+    ],
+  });
+  document.body.appendChild(menu);
+  const items = menu.querySelectorAll('.lk-menu__item');
+  assert.deepEqual(Array.from(items, (i) => i.tabIndex), [0, -1, -1, -1], '整個清單只佔一個 Tab 停駐點');
+
+  items[0].focus();
+  key(items[0], 'ArrowDown');
+  assert.equal(document.activeElement, items[2], '跳過停用的封存');
+  key(items[2], 'ArrowUp');
+  assert.equal(document.activeElement, items[0]);
+  key(items[0], 'End');
+  assert.equal(document.activeElement, items[3]);
+
+  const group = menu.querySelector('[role="group"]');
+  assert.ok(group, '群組標題之後的項目要包成 group');
+  const label = document.getElementById(group.getAttribute('aria-labelledby'));
+  assert.equal(label.textContent, '扣款週期');
+  assert.deepEqual(
+    Array.from(group.querySelectorAll('[role="menuitemradio"]'), (i) => i.textContent),
+    ['每月', '每年'],
+    '單選項的範圍就是這個群組',
+  );
+  assert.equal(items[0].closest('[role="group"]'), null, '分隔線之前的項目不屬於群組');
+  menu.remove();
+});
+
+test('Table 有 caption 時外層是以 caption 命名、可聚焦的捲動區；沒有就不加', () => {
+  const captioned = Table({ caption: '本月訂閱', columns: [{ key: 'a', label: 'A' }], rows: [] });
+  assert.equal(captioned.getAttribute('role'), 'region');
+  assert.equal(captioned.getAttribute('tabindex'), '0', '鍵盤使用者要能聚焦後橫向捲動');
+  assert.equal(captioned.getAttribute('aria-labelledby'), captioned.querySelector('caption').id);
+
+  const bare = Table({ columns: [{ key: 'a', label: 'A' }], rows: [] });
+  assert.equal(bare.getAttribute('role'), null, '沒有名稱的 region 沒有意義');
+  assert.equal(bare.getAttribute('tabindex'), null);
+});
+
+test('Menu 方向鍵移動後焦點離開，Tab 停駐點回到第一項（nomemory），Shift+Tab 不會卡在清單裡', () => {
+  const before = document.createElement('button');
+  const menu = Menu({ items: [{ label: '編輯' }, { label: '複製' }, { label: '刪除' }] });
+  document.body.append(before, menu);
+  const items = menu.querySelectorAll('.lk-menu__item');
+
+  items[0].focus();
+  key(items[0], 'ArrowDown');
+  key(items[1], 'ArrowDown');
+  assert.deepEqual(Array.from(items, (i) => i.tabIndex), [-1, -1, 0], '焦點在清單內時停駐點跟著焦點，前後都沒有別的停駐點');
+
+  before.focus();
+  assert.deepEqual(Array.from(items, (i) => i.tabIndex), [0, -1, -1], '離開後下次 Tab 進來從第一項開始');
+  before.remove();
+  menu.remove();
+});
+
+test('Radio 群組裡已選的那一項被停用時，Tab 停駐點改落在第一個可用的選項', () => {
+  const group = ChoiceGroup({
+    radio: true,
+    ariaLabel: '方案',
+    children: [
+      Radio({ label: '舊方案', value: 'legacy', checked: true, disabled: true }),
+      Radio({ label: '標準', value: 'standard' }),
+    ],
+  });
+  const [legacy, standard] = group.querySelectorAll('.lk-choice--radio');
+  assert.equal(legacy.tabIndex, -1, '停用的按鈕無法聚焦，不能當停駐點');
+  assert.equal(standard.tabIndex, 0);
+});
+
+test('Combobox 用滑鼠選完之後再點輸入框會重新展開', () => {
+  const field = Combobox({ options: [{ label: 'Netflix', value: 'netflix' }] });
+  document.body.appendChild(field);
+  const input = field.querySelector('input[role="combobox"]');
+  const panel = field.querySelector('[role="listbox"]');
+  input.dispatchEvent(new window.Event('focus'));
+  panel.querySelector('[role="option"]').dispatchEvent(new window.MouseEvent('click'));
+  assert.equal(panel.hidden, true);
+
+  input.dispatchEvent(new window.MouseEvent('click'));
+  assert.equal(panel.hidden, false, '焦點一直在輸入框，不會再收到 focus 事件');
+  field.remove();
+});
+
+test('瀏覽器原生支援 focusgroup 時交給瀏覽器，但 role 仍寫在 DOM 上', () => {
+  const supported = new Set(['tablist', 'menu']);
+  Object.defineProperty(window.HTMLElement.prototype, 'focusGroup', {
+    configurable: true,
+    get: () => ({ supports: (token) => supported.has(token) }),
+  });
+  try {
+    const tabs = Tabs({ items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }] });
+    assert.equal(tabs.getAttribute('focusgroup'), 'tablist nomemory');
+    assert.equal(tabs.getAttribute('role'), 'tablist', '只看 DOM 的工具也要認得出來');
+    assert.equal(tabs.children[0].getAttribute('role'), 'tab');
+    assert.equal(tabs.children[0].getAttribute('tabindex'), null, '停駐點交給瀏覽器，不寫 tabindex');
+    assert.deepEqual(Array.from(tabs.children, (t) => t.hasAttribute('focusgroupstart')), [true, false]);
+    tabs.children[1].dispatchEvent(new window.MouseEvent('click'));
+    assert.deepEqual(Array.from(tabs.children, (t) => t.hasAttribute('focusgroupstart')), [false, true], '進入點跟著選取移動');
+
+    const menu = Menu({ items: [{ label: '編輯' }, { label: '封存', disabled: true }] });
+    assert.equal(menu.getAttribute('focusgroup'), 'menu nomemory');
+    assert.deepEqual(
+      Array.from(menu.querySelectorAll('.lk-menu__item'), (i) => i.getAttribute('role')),
+      ['menuitem', 'menuitem'],
+      '停用項不能聚焦，瀏覽器不會替它推斷 role，所以一定要寫',
+    );
+
+    supported.delete('menu');
+    const unsupported = Menu({ items: [{ label: '編輯' }] });
+    assert.equal(unsupported.getAttribute('focusgroup'), null, '不支援這個 behavior 就走退路');
+    assert.equal(unsupported.querySelector('.lk-menu__item').tabIndex, 0);
+  } finally {
+    delete window.HTMLElement.prototype.focusGroup;
+  }
 });

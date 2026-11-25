@@ -85,6 +85,143 @@ export function uid(prefix: string): string {
   return `${prefix}-${idCounter}`;
 }
 
+/* -------------------------------- 焦點群組 -------------------------------- */
+
+/** 方向鍵的軸：inline 收左右、block 收上下、both 兩組都收。 */
+export type RoveAxis = 'inline' | 'block' | 'both';
+
+export interface RoveOptions {
+  axis: RoveAxis;
+  /** 群組裡的所有項目，依視覺順序排列。 */
+  items: () => HTMLElement[];
+  /** 從群組外 Tab 進來時落在哪一項；沒給就是第一個可用的項目。 */
+  current?: () => HTMLElement | undefined;
+  /** 方向鍵把焦點移到某一項之後呼叫，例如 radio 要跟著選取。 */
+  onMove?: (item: HTMLElement) => void;
+}
+
+function usable(item: HTMLElement): boolean {
+  return !(item as HTMLButtonElement).disabled && item.getAttribute('aria-disabled') !== 'true';
+}
+
+function isRtl(node: HTMLElement): boolean {
+  return node.ownerDocument.defaultView?.getComputedStyle(node).direction === 'rtl';
+}
+
+/** 這個按鍵要往前（-1）還是往後（1）走；不是這個軸的方向鍵就回 0。 */
+function stepFor(key: string, axis: RoveAxis, rtl: boolean): number {
+  const inline = axis !== 'block';
+  const block = axis !== 'inline';
+  if (inline && key === 'ArrowRight') return rtl ? -1 : 1;
+  if (inline && key === 'ArrowLeft') return rtl ? 1 : -1;
+  if (block && key === 'ArrowDown') return 1;
+  if (block && key === 'ArrowUp') return -1;
+  return 0;
+}
+
+/**
+ * Roving tabindex：一組項目只佔一個 Tab 停駐點，方向鍵與 Home／End 在項目之間移動焦點，頭尾相接。
+ *
+ * 焦點在群組內時，停駐點跟著焦點走，Tab 與 Shift+Tab 都會直接離開群組；
+ * 焦點離開後停駐點回到 `current`，下次 Tab 進來落在那裡。
+ * 回傳 `sync`，`current` 改變後呼叫它重新分配 tabindex。
+ */
+export function rove(container: HTMLElement, options: RoveOptions): () => void {
+  const place = (entry: HTMLElement | undefined): void => {
+    for (const item of options.items()) item.tabIndex = item === entry ? 0 : -1;
+  };
+  const sync = (): void => {
+    // 已選的那一項如果被停用就無法聚焦，整組會 Tab 不進來，改落在第一個可用的項目
+    const current = options.current?.();
+    place(current && usable(current) ? current : options.items().find(usable));
+  };
+
+  container.addEventListener('focusin', (event) => {
+    const item = event.target as HTMLElement;
+    if (options.items().includes(item)) place(item);
+  });
+  container.addEventListener('focusout', (event) => {
+    if (!container.contains(event.relatedTarget as Node | null)) sync();
+  });
+
+  container.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const items = options.items().filter(usable);
+    const index = items.indexOf(event.target as HTMLElement);
+    if (index < 0) return;
+
+    let next: number;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = items.length - 1;
+    else {
+      const step = stepFor(event.key, options.axis, isRtl(container));
+      if (step === 0) return;
+      next = (index + step + items.length) % items.length;
+    }
+
+    const target = items[next];
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    options.onMove?.(target);
+  });
+
+  sync();
+  return sync;
+}
+
+export type FocusgroupBehavior = 'tablist' | 'menu';
+
+/**
+ * 瀏覽器是否原生支援這種 focusgroup。目前只有 Chromium 系列。
+ *
+ * 只看屬性存在不夠：實作可能有 `focusGroup` 卻還不支援某個 behavior，所以再問 `supports()`。
+ */
+export function hasNativeFocusgroup(behavior: FocusgroupBehavior): boolean {
+  if (!('focusGroup' in HTMLElement.prototype)) return false;
+  const tokens = (document.createElement('div') as HTMLElement & { focusGroup?: DOMTokenList }).focusGroup;
+  return tokens?.supports?.(behavior) === true;
+}
+
+/** 原生 focusgroup 只負責移動焦點，所以這裡不收 `onMove`；`axis` 也只給退路用，原生的軸由 behavior 決定。 */
+export interface FocusgroupOptions extends Omit<RoveOptions, 'onMove'> {
+  /** 沒有寫 role 的項目要補上的 role。容器的 role 就是 behavior 本身。 */
+  itemRole: string;
+}
+
+/**
+ * 宣告一個 tablist 或 menu 的焦點群組。
+ *
+ * 容器與項目的 role 一律寫在 DOM 上。原生 focusgroup 遇到明確 role 只是跳過推斷，鍵盤行為照常，
+ * 而只看 DOM 的工具（axe、Playwright 的 getByRole、呼叫端的 `[role="tab"]` 選擇器）才不會因瀏覽器而異。
+ *
+ * 支援原生 focusgroup 的瀏覽器把方向鍵與單一 Tab 停駐點交給瀏覽器，其他瀏覽器用 `rove()` 補上。
+ * 兩條路都是 `nomemory`：從外面進來時落在 `current`（例如已選的 tab），而不是上次停留的那一項。
+ *
+ * 回傳 `sync`，`current` 改變後呼叫它。
+ */
+export function focusgroup(
+  container: HTMLElement,
+  behavior: FocusgroupBehavior,
+  options: FocusgroupOptions,
+): () => void {
+  container.setAttribute('role', behavior);
+  for (const item of options.items()) {
+    if (!item.hasAttribute('role')) item.setAttribute('role', options.itemRole);
+  }
+
+  if (hasNativeFocusgroup(behavior)) {
+    container.setAttribute('focusgroup', `${behavior} nomemory`);
+    const sync = (): void => {
+      const entry = options.current?.();
+      for (const item of options.items()) item.toggleAttribute('focusgroupstart', item === entry);
+    };
+    sync();
+    return sync;
+  }
+  return rove(container, options);
+}
+
 /** 切換 documentElement 的 data-theme，值為 tokens.json 的 theme id。 */
 export function setTheme(theme: 'light' | 'dark'): void {
   document.documentElement.setAttribute('data-theme', theme);
