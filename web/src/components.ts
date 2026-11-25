@@ -69,6 +69,10 @@ export interface TextFieldFields {
   help?: string;
   /** 有值即進入錯誤態：邊框轉 danger、顯示帶圖示的錯誤訊息。會覆蓋 help。 */
   error?: string;
+  /**
+   * 多行輸入。高度隨內容長高（`field-sizing: content`），與 Android `singleLine = false` 的行為一致；
+   * 不支援的瀏覽器維持固定高度並在框內捲動。
+   */
   multiline?: boolean;
   disabled?: boolean;
   type?: string;
