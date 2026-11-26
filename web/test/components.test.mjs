@@ -1,6 +1,7 @@
 import './setup.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   Button, TextField, Card, List, ListRow, Badge, Banner,
   Checkbox, Radio, ChoiceGroup, Toggle, SegmentedControl, Chip,
@@ -926,4 +927,27 @@ test('瀏覽器原生支援 focusgroup 時交給瀏覽器，但 role 仍寫在 D
   } finally {
     delete window.HTMLElement.prototype.focusGroup;
   }
+});
+
+test('leokit.css 不用 CSS nesting，減少動態與由右至左的覆寫在不支援 nesting 的瀏覽器也生效', () => {
+  const css = readFileSync(new URL('../dist/leokit.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const stack = [];
+  const nested = [];
+  let prelude = '';
+  for (const char of css) {
+    if (char === '{') {
+      // 樣式規則裡又開一個區塊，就是 nesting（巢狀的 @media 或 &:dir() 之類）
+      if (stack.at(-1) === 'rule') nested.push(prelude.trim());
+      stack.push(prelude.trim().startsWith('@') ? 'at' : 'rule');
+      prelude = '';
+    } else if (char === '}') {
+      stack.pop();
+      prelude = '';
+    } else if (char === ';') {
+      prelude = '';
+    } else {
+      prelude += char;
+    }
+  }
+  assert.deepEqual(nested, []);
 });

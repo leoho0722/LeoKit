@@ -263,8 +263,10 @@
   position: absolute; inset-block-start: 2px; inset-inline-start: 2px; width: 25px; height: 25px;
   border-radius: var(--radius-pill); background: var(--bg-surface);
   box-shadow: var(--shadow-xs);
-  /* 位移是空間上的動態，減少動態時直接跳到終點；終點本身（開或關的位置）不受影響 */
-  @media (prefers-reduced-motion: no-preference) { transition: translate 150ms ease-out; }
+}
+/* 位移是空間上的動態，減少動態時直接跳到終點；終點本身（開或關的位置）不受影響 */
+@media (prefers-reduced-motion: no-preference) {
+  .lk-toggle__knob { transition: translate 150ms ease-out; }
 }
 .lk-toggle[aria-checked="true"] .lk-toggle__track { background: var(--brand); border-color: var(--brand); }
 .lk-toggle[aria-checked="true"] .lk-toggle__knob { translate: 20px; }
@@ -369,8 +371,6 @@
 .lk-progress--success .lk-progress__bar { background: var(--success); }
 .lk-progress--indeterminate .lk-progress__bar {
   width: 40%; animation: lk-slide 1.4s ease-in-out infinite;
-  /* 減少動態時不左右滑，改成整條原地明暗起伏，仍看得出還在進行 */
-  @media (prefers-reduced-motion: reduce) { width: 100%; animation: lk-pulse 1.6s ease-in-out infinite; }
 }
 @keyframes lk-slide {
   from { translate: calc(-110% * var(--lk-slide-dir)); }
@@ -380,10 +380,14 @@
   width: var(--icon-lg); height: var(--icon-lg); border-radius: var(--radius-pill);
   border: 2px solid var(--bg-inset); border-top-color: var(--brand);
   animation: lk-spin 800ms linear infinite;
-  /* 減少動態時放慢而不是停掉，使用者才知道還在跑 */
-  @media (prefers-reduced-motion: reduce) { animation-duration: 2s; }
 }
 @keyframes lk-spin { to { rotate: 1turn; } }
+@media (prefers-reduced-motion: reduce) {
+  /* 不確定進度不左右滑，改成整條原地明暗起伏，仍看得出還在進行 */
+  .lk-progress--indeterminate .lk-progress__bar { width: 100%; animation: lk-pulse 1.6s ease-in-out infinite; }
+  /* Spinner 放慢而不是停掉，使用者才知道還在跑 */
+  .lk-spinner { animation-duration: 2s; }
+}
 .lk-skeleton { background: var(--bg-subtle); border-radius: var(--radius-sm); height: 1em; }
 .lk-skeleton--title { height: 20px; width: 60%; }
 .lk-skeleton--line { height: 14px; }
@@ -570,8 +574,8 @@
   -webkit-appearance: none; appearance: none;
   flex: 1 1 auto; width: 100%; height: var(--control-h-md);
   margin: 0; background: transparent; cursor: pointer;
-  &:dir(rtl) { --lk-fill-dir: to left; }
 }
+.lk-slider:dir(rtl) { --lk-fill-dir: to left; }
 .lk-slider::-webkit-slider-runnable-track {
   height: var(--track-h); border-radius: var(--radius-pill);
   background: linear-gradient(var(--lk-fill-dir), var(--lk-fill) 0 var(--lk-pct), var(--bg-inset) var(--lk-pct) 100%);
