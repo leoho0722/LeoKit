@@ -1,4 +1,4 @@
-import { h, cx, icon, uid, type Attrs, type Child, type LKGlyph } from './dom.js';
+import { h, cx, icon, uid, focusgroup, rove, type Attrs, type Child, type LKGlyph } from './dom.js';
 
 /* ---------------------------------- Button --------------------------------- */
 
@@ -69,6 +69,10 @@ export interface TextFieldFields {
   help?: string;
   /** 有值即進入錯誤態：邊框轉 danger、顯示帶圖示的錯誤訊息。會覆蓋 help。 */
   error?: string;
+  /**
+   * 多行輸入。高度隨內容長高（`field-sizing: content`），與 Android `singleLine = false` 的行為一致；
+   * 不支援的瀏覽器維持固定高度並在框內捲動。
+   */
   multiline?: boolean;
   disabled?: boolean;
   type?: string;
@@ -376,9 +380,12 @@ export interface ChoiceGroupOptions {
   class?: string;
 }
 
-/** Checkbox 或 Radio 的群組容器。Radio 的互斥行為由它負責。 */
+/**
+ * Checkbox 或 Radio 的群組容器。Radio 的互斥行為與鍵盤操作由它負責：
+ * 整組只佔一個 Tab 停駐點（落在已選的那一項），方向鍵移動焦點並同時選取，與原生 radio 一致。
+ */
 export function ChoiceGroup(options: ChoiceGroupOptions): HTMLDivElement {
-  return h(
+  const root = h(
     'div',
     {
       class: cx('lk-choice-group', options.class),
@@ -387,6 +394,19 @@ export function ChoiceGroup(options: ChoiceGroupOptions): HTMLDivElement {
     },
     options.children,
   );
+
+  if (options.radio) {
+    const radios = (): HTMLElement[] => Array.from(root.querySelectorAll<HTMLElement>('.lk-choice--radio'));
+    const sync = rove(root, {
+      axis: 'both',
+      items: radios,
+      current: () => radios().find((radio) => radio.getAttribute('aria-checked') === 'true'),
+      onMove: (radio) => radio.click(),
+    });
+    // 子項的 click 先更新 aria-checked，冒泡到這裡再把 Tab 停駐點移到新選的那一項
+    root.addEventListener('click', sync);
+  }
+  return root;
 }
 
 /* ---------------------------------- Toggle --------------------------------- */
@@ -449,31 +469,55 @@ export interface SegmentedControlOptions {
   class?: string;
 }
 
+/**
+ * Tabs 與 SegmentedControl 共用的 tablist 行為。
+ *
+ * 整組只佔一個 Tab 停駐點，左右鍵與 Home／End 在 tab 之間移動，選取跟著焦點走
+ * （與原生 radio 群組一致，少按一次鍵）。點擊或聚焦已選的那一項不會再回報一次。
+ */
+function tablist(root: HTMLElement, tabs: HTMLButtonElement[], onChange?: (value: string) => void): void {
+  const selected = (): HTMLButtonElement | undefined =>
+    tabs.find((tab) => tab.getAttribute('aria-selected') === 'true');
+  const sync = focusgroup(root, 'tablist', {
+    axis: 'inline',
+    itemRole: 'tab',
+    items: () => tabs,
+    current: selected,
+  });
+
+  const select = (tab: HTMLButtonElement): void => {
+    if (selected() === tab) return;
+    for (const peer of tabs) peer.setAttribute('aria-selected', String(peer === tab));
+    sync();
+    // tab 列可以橫向捲動；只捲 tab 列本身，不要連頁面一起捲
+    tab.scrollIntoView?.({ block: 'nearest', inline: 'nearest', container: 'nearest' } as ScrollIntoViewOptions);
+    onChange?.(tab.dataset.value ?? '');
+  };
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('focus', () => select(tab));
+  }
+}
+
 /** 在少數幾個互斥的檢視或篩選條件之間切換。切換後立即生效，不需要「套用」。 */
 export function SegmentedControl(options: SegmentedControlOptions): HTMLDivElement {
   const selected = options.value ?? options.items[0]?.value;
-  const root = h('div', {
-    class: cx('lk-seg', options.fullWidth && 'lk-seg--full', options.class),
-    role: 'tablist',
-    'aria-label': options.ariaLabel,
-  });
-
-  for (const item of options.items) {
-    const tab = h('button', {
+  const tabs = options.items.map((item) =>
+    h('button', {
       type: 'button',
-      role: 'tab',
       class: 'lk-seg__item label',
       'aria-selected': String(item.value === selected),
       'data-value': item.value,
       text: item.label,
-    });
-    tab.addEventListener('click', () => {
-      for (const peer of root.children) peer.setAttribute('aria-selected', 'false');
-      tab.setAttribute('aria-selected', 'true');
-      options.onChange?.(item.value);
-    });
-    root.appendChild(tab);
-  }
+    }),
+  );
+  const root = h(
+    'div',
+    { class: cx('lk-seg', options.fullWidth && 'lk-seg--full', options.class), 'aria-label': options.ariaLabel },
+    tabs,
+  );
+  tablist(root, tabs, options.onChange);
   return root;
 }
 
@@ -642,36 +686,29 @@ export interface TabsOptions {
 /** 在同一層級的幾個內容區之間切換。切換後的內容由呼叫端渲染，元件不管內容。 */
 export function Tabs(options: TabsOptions): HTMLDivElement {
   const current = options.value ?? options.items[0]?.value;
-  const root = h('div', {
-    class: cx('lk-tabs', options.fill && 'lk-tabs--fill', options.class),
-    role: 'tablist',
-    'aria-label': options.ariaLabel,
-  });
-
-  for (const item of options.items) {
+  const tabs = options.items.map((item) => {
     const children: Child[] = [];
     if (item.icon) children.push(icon(item.icon, 'lk-btn__icon'));
     children.push(item.label);
     if (item.badge) children.push(Badge({ label: item.badge, tone: item.badgeTone }));
 
-    const tab = h(
+    return h(
       'button',
       {
         type: 'button',
-        role: 'tab',
         class: 'lk-tabs__item label',
         'aria-selected': String(item.value === current),
         'data-value': item.value,
       } as Attrs,
       children,
     );
-    tab.addEventListener('click', () => {
-      for (const peer of root.children) peer.setAttribute('aria-selected', 'false');
-      tab.setAttribute('aria-selected', 'true');
-      options.onChange?.(item.value);
-    });
-    root.appendChild(tab);
-  }
+  });
+  const root = h(
+    'div',
+    { class: cx('lk-tabs', options.fill && 'lk-tabs--fill', options.class), 'aria-label': options.ariaLabel },
+    tabs,
+  );
+  tablist(root, tabs, options.onChange);
   return root;
 }
 
@@ -763,7 +800,12 @@ export interface MenuSeparator {
   separator: true;
 }
 
-/** 一組項目的小標題。 */
+/**
+ * 一組項目的小標題。
+ *
+ * 從它之後到下一個分隔線或群組標題之前的項目，會被包進以這個標題命名的 `role="group"`，
+ * 單選項（`menuitemradio`）的範圍就是這一組。
+ */
 export interface MenuGroup {
   group: string;
 }
@@ -777,21 +819,29 @@ export interface MenuOptions {
   class?: string;
 }
 
-/** 從一個觸發點展開的動作清單。開關與定位由呼叫端處理。 */
+/**
+ * 從一個觸發點展開的動作清單。開關與定位由呼叫端處理。
+ *
+ * 整個清單只佔一個 Tab 停駐點，上下鍵與 Home／End 在項目之間移動，跳過停用的項目。
+ */
 export function Menu(options: MenuOptions): HTMLDivElement {
-  const root = h('div', {
-    class: cx('lk-menu', options.class),
-    role: 'menu',
-    'aria-label': options.ariaLabel,
-  });
+  const root = h('div', { class: cx('lk-menu', options.class), 'aria-label': options.ariaLabel });
+  const buttons: HTMLButtonElement[] = [];
+  let parent: HTMLElement = root;
 
   for (const item of options.items) {
     if ('separator' in item) {
       root.appendChild(h('hr', { class: 'lk-menu__sep' }));
+      parent = root;
       continue;
     }
     if ('group' in item) {
-      root.appendChild(h('div', { class: 'lk-menu__group label-sm', text: item.group }));
+      const labelId = uid('lk-menu-group');
+      // 標題已經是群組的名稱，對閱讀器隱藏，避免進入群組時唸兩次
+      parent = h('div', { role: 'group', 'aria-labelledby': labelId } as Attrs, [
+        h('div', { id: labelId, class: 'lk-menu__group label-sm', text: item.group, 'aria-hidden': 'true' } as Attrs),
+      ]);
+      root.appendChild(parent);
       continue;
     }
     const children: Child[] = [];
@@ -800,21 +850,24 @@ export function Menu(options: MenuOptions): HTMLDivElement {
     if (item.hint) children.push(h('span', { class: 'lk-menu__hint footnote', text: item.hint }));
     if (item.checked) children.push(icon('check'));
 
-    root.appendChild(
-      h(
-        'button',
-        {
-          type: 'button',
-          role: item.checked === undefined ? 'menuitem' : 'menuitemradio',
-          class: cx('lk-menu__item', item.danger && 'lk-menu__item--danger'),
-          'aria-checked': item.checked === undefined ? undefined : String(item.checked),
-          disabled: item.disabled,
-          onClick: item.onSelect,
-        } as Attrs,
-        children,
-      ),
+    const button = h(
+      'button',
+      {
+        type: 'button',
+        // 一般項目的 menuitem 由 focusgroup() 補上
+        role: item.checked === undefined ? undefined : 'menuitemradio',
+        class: cx('lk-menu__item', item.danger && 'lk-menu__item--danger'),
+        'aria-checked': item.checked === undefined ? undefined : String(item.checked),
+        disabled: item.disabled,
+        onClick: item.onSelect,
+      } as Attrs,
+      children,
     );
+    buttons.push(button);
+    parent.appendChild(button);
   }
+
+  focusgroup(root, 'menu', { axis: 'block', itemRole: 'menuitem', items: () => buttons });
   return root;
 }
 
@@ -1174,9 +1227,19 @@ export type TableRow = Record<string, string | number | Node | undefined>;
 export interface TableOptions {
   columns: TableColumn[];
   rows: TableRow[];
-  /** 這張表在說什麼，會被閱讀器唸出來。 */
+  /**
+   * 這張表在說什麼，會被閱讀器唸出來。
+   *
+   * 同時拿來命名外層的捲動區：有 caption 時外層是 `role="region"` 且可以聚焦，
+   * 表格比容器寬的時候，只用鍵盤的使用者也能用方向鍵橫向捲動。
+   */
   caption?: string;
-  /** 表頭在捲動時固定。 */
+  /**
+   * 表頭在捲動時固定。
+   *
+   * 外層容器同時負責橫向捲動，所以表頭只會黏在它的頂端、不會黏在頁面上；
+   * 要用 `class` 替外層限制高度（例如 `max-block-size`），讓表格在它裡面縱向捲動。
+   */
   sticky?: boolean;
   class?: string;
 }
@@ -1221,13 +1284,23 @@ export function Table(options: TableOptions): HTMLDivElement {
     ),
   );
 
-  return h('div', { class: cx('lk-table-wrap', options.class) }, [
-    h('table', { class: cx('lk-table', options.sticky && 'lk-table--sticky') }, [
-      options.caption ? h('caption', { class: 'footnote', text: options.caption }) : null,
-      h('thead', null, [head]),
-      h('tbody', null, body),
-    ]),
-  ]);
+  const captionId = options.caption ? uid('lk-table-caption') : undefined;
+  return h(
+    'div',
+    {
+      class: cx('lk-table-wrap', options.class),
+      role: captionId ? 'region' : undefined,
+      'aria-labelledby': captionId,
+      tabindex: captionId ? '0' : undefined,
+    } as Attrs,
+    [
+      h('table', { class: cx('lk-table', options.sticky && 'lk-table--sticky') }, [
+        options.caption ? h('caption', { id: captionId, class: 'footnote', text: options.caption }) : null,
+        h('thead', null, [head]),
+        h('tbody', null, body),
+      ]),
+    ],
+  );
 }
 
 /* ---------------------------------- Slider --------------------------------- */
@@ -1471,11 +1544,30 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
 
   const panel = h('div', { class: 'lk-menu lk-combobox__panel', id: listId, role: 'listbox' });
   panel.hidden = true;
+  // 焦點要一直留在輸入框：按下選項或面板捲軸時不讓輸入框失焦，否則 blur 會先把面板收掉
+  panel.addEventListener('mousedown', (event) => event.preventDefault());
+
+  const rows = (): HTMLButtonElement[] =>
+    Array.from(panel.querySelectorAll<HTMLButtonElement>('[role="option"]'));
+
+  /** 標出目前的選項，並用 aria-activedescendant 告訴閱讀器焦點「在」哪一項。 */
+  const highlight = (index: number): void => {
+    active = index;
+    const all = rows();
+    all.forEach((row, i) => row.setAttribute('aria-selected', String(i === active)));
+    const row = all[active];
+    if (row) {
+      input.setAttribute('aria-activedescendant', row.id);
+      row.scrollIntoView?.({ block: 'nearest' });
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+  };
 
   const close = (): void => {
     panel.hidden = true;
     input.setAttribute('aria-expanded', 'false');
-    active = -1;
+    highlight(-1);
   };
 
   const render = (query: string): void => {
@@ -1498,9 +1590,12 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
         'button',
         {
           type: 'button',
+          id: `${listId}-${index}`,
           role: 'option',
+          // 選項不進 Tab 順序：鍵盤操作全在輸入框上，靠 aria-activedescendant 指過來
+          tabindex: '-1',
           class: 'lk-menu__item',
-          'aria-selected': String(index === active),
+          'aria-selected': 'false',
           'data-value': option.value,
         } as Attrs,
         [h('span', { class: 'lk-menu__label body', text: option.label })],
@@ -1516,11 +1611,18 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
 
   const open = (): void => {
     render(input.value);
+    // 選項重建過，舊的 aria-activedescendant 可能指到同 id、但沒被選取的新選項
+    highlight(active);
     panel.hidden = false;
     input.setAttribute('aria-expanded', 'true');
   };
 
   input.addEventListener('focus', open);
+  // 用滑鼠選完之後焦點還在輸入框，再點一次不會觸發 focus，要靠 click 重新展開
+  input.addEventListener('click', () => {
+    if (panel.hidden) open();
+  });
+  input.addEventListener('blur', close);
   input.addEventListener('input', () => {
     active = -1;
     open();
@@ -1533,20 +1635,19 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (panel.hidden) open();
-      const rows = panel.querySelectorAll('[role="option"]');
-      if (rows.length === 0) return;
-      active =
+      const count = rows().length;
+      if (count === 0) return;
+      highlight(
         event.key === 'ArrowDown'
-          ? (active + 1) % rows.length
+          ? (active + 1) % count
           : active <= 0
-            ? rows.length - 1
-            : active - 1;
-      rows.forEach((row, index) => row.setAttribute('aria-selected', String(index === active)));
+            ? count - 1
+            : active - 1,
+      );
       return;
     }
     if (event.key === 'Enter' && active >= 0) {
-      const rows = panel.querySelectorAll<HTMLButtonElement>('[role="option"]');
-      const row = rows[active];
+      const row = rows()[active];
       if (row) {
         event.preventDefault();
         row.click();

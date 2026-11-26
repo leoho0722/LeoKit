@@ -9,6 +9,11 @@
 [class^="lk-"]::before, [class*=" lk-"]::before,
 [class^="lk-"]::after, [class*=" lk-"]::after { box-sizing: border-box; }
 
+/* 告訴瀏覽器現在是哪個主題，捲軸、textarea、range、自動填入底色這些瀏覽器自己畫的 UI 才會跟著換。
+   選擇器與 tokens.generated.css 的主題區塊對齊：沒下 data-theme 時是淺色，容器上的 data-theme 也算數。 */
+:root, [data-theme="light"] { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
+
 /* ---------- 版面工具 ---------- */
 .lk-stack { display: flex; flex-direction: column; gap: var(--spacing-12); }
 .lk-stack--tight { gap: var(--spacing-8); }
@@ -116,7 +121,8 @@
 .lk-field__error { display: flex; align-items: center; gap: var(--spacing-4); color: var(--danger-ink); }
 .lk-field__error svg { width: var(--icon-sm); height: var(--icon-sm); flex: none; }
 .lk-field--error .lk-input { border-color: var(--danger); border-width: var(--border-w-strong); }
-.lk-textarea { height: auto; min-height: 96px; padding-block: var(--spacing-12); resize: vertical; }
+/* 多行欄位隨內容長高；寬度固定在 100%，避免換掉 placeholder 時左右跳動。不支援 field-sizing 時維持最小高度並捲動。 */
+.lk-textarea { height: auto; min-height: 96px; padding-block: var(--spacing-12); resize: vertical; field-sizing: content; }
 
 /* ---------- Card ---------- */
 .lk-card {
@@ -131,9 +137,9 @@
 .lk-card--flush { padding: 0; overflow: hidden; }
 .lk-card--selected { border-color: var(--brand); border-width: var(--border-w-strong); }
 .lk-card__head { display: flex; align-items: flex-start; gap: var(--spacing-12); }
-.lk-card__title { color: var(--text-primary); margin: 0; }
+.lk-card__title { color: var(--text-primary); margin: 0; text-wrap: balance; }
 .lk-card__sub { color: var(--text-secondary); margin: 0; }
-.lk-card__body { color: var(--text-primary); margin: 0; }
+.lk-card__body { color: var(--text-primary); margin: 0; text-wrap: pretty; }
 .lk-card__foot { display: flex; align-items: center; gap: var(--spacing-8); }
 
 /* ---------- List / ListRow ---------- */
@@ -240,8 +246,8 @@
   padding: var(--spacing-8) var(--spacing-16) var(--spacing-24);
 }
 .lk-sheet__grabber { width: 36px; height: 5px; margin: 0 auto var(--spacing-12); border-radius: var(--radius-pill); background: var(--border-strong); }
-.lk-sheet__title { color: var(--text-primary); margin: 0 0 var(--spacing-4); }
-.lk-sheet__sub { color: var(--text-secondary); margin: 0 0 var(--spacing-20); }
+.lk-sheet__title { color: var(--text-primary); margin: 0 0 var(--spacing-4); text-wrap: balance; }
+.lk-sheet__sub { color: var(--text-secondary); margin: 0 0 var(--spacing-20); text-wrap: pretty; }
 .lk-sheet__actions { display: flex; flex-direction: column; gap: var(--spacing-8); }
 
 /* ---------- Toggle（switch） ---------- */
@@ -254,13 +260,16 @@
   transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 .lk-toggle__knob {
-  position: absolute; top: 2px; left: 2px; width: 25px; height: 25px;
+  position: absolute; inset-block-start: 2px; inset-inline-start: 2px; width: 25px; height: 25px;
   border-radius: var(--radius-pill); background: var(--bg-surface);
   box-shadow: var(--shadow-xs);
-  transition: transform 150ms ease-out;
+  /* 位移是空間上的動態，減少動態時直接跳到終點；終點本身（開或關的位置）不受影響 */
+  @media (prefers-reduced-motion: no-preference) { transition: translate 150ms ease-out; }
 }
 .lk-toggle[aria-checked="true"] .lk-toggle__track { background: var(--brand); border-color: var(--brand); }
-.lk-toggle[aria-checked="true"] .lk-toggle__knob { transform: translateX(20px); }
+.lk-toggle[aria-checked="true"] .lk-toggle__knob { translate: 20px; }
+/* 由右至左的版面，開啟時把手往左滑 */
+.lk-toggle[aria-checked="true"]:dir(rtl) .lk-toggle__knob { translate: -20px; }
 .lk-toggle:focus-visible .lk-toggle__track { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
 .lk-toggle[disabled], .lk-toggle[aria-disabled="true"] { opacity: var(--opacity-disabled); pointer-events: none; }
 
@@ -277,9 +286,10 @@
 }
 .lk-tabs__item:hover { color: var(--text-primary); }
 .lk-tabs__item[aria-selected="true"] { color: var(--brand); }
+/* 底線用 border 畫而不是 background：強制色彩模式會拿掉背景，選取狀態就只剩顏色 */
 .lk-tabs__item[aria-selected="true"]::after {
-  content: ""; position: absolute; inset-inline: var(--spacing-8); bottom: 0; height: 2px;
-  border-radius: var(--radius-pill); background: var(--brand);
+  content: ""; position: absolute; inset-inline: var(--spacing-8); inset-block-end: 0;
+  border-block-end: 2px solid var(--brand); border-radius: var(--radius-pill);
 }
 .lk-tabs__item:focus-visible { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: calc(var(--focus-ring-offset) * -1); }
 
@@ -332,8 +342,8 @@
   background: var(--bg-subtle); color: var(--text-secondary);
 }
 .lk-empty__icon svg { width: var(--icon-xl); height: var(--icon-xl); }
-.lk-empty__title { margin: 0; color: var(--text-primary); }
-.lk-empty__body { margin: 0; color: var(--text-secondary); max-width: 40ch; }
+.lk-empty__title { margin: 0; color: var(--text-primary); text-wrap: balance; }
+.lk-empty__body { margin: 0; color: var(--text-secondary); max-width: 40ch; text-wrap: pretty; }
 .lk-empty__actions { display: flex; gap: var(--spacing-8); margin-top: var(--spacing-8); }
 .lk-empty--compact { padding: var(--spacing-24) var(--spacing-16); }
 
@@ -345,33 +355,40 @@
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-20);
 }
-.lk-dialog__title { margin: 0 0 var(--spacing-8); color: var(--text-primary); }
-.lk-dialog__body { margin: 0 0 var(--spacing-20); color: var(--text-secondary); }
+.lk-dialog__title { margin: 0 0 var(--spacing-8); color: var(--text-primary); text-wrap: balance; }
+.lk-dialog__body { margin: 0 0 var(--spacing-20); color: var(--text-secondary); text-wrap: pretty; }
 .lk-dialog__actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-8); }
 /* iOS alert 慣例：動作上下堆疊、主要動作在下 */
 .lk-dialog__actions--stacked { flex-direction: column-reverse; align-items: stretch; }
 
 /* ---------- Progress / Spinner / Skeleton ---------- */
-.lk-progress { height: var(--track-h); border-radius: var(--radius-pill); background: var(--bg-inset); overflow: hidden; }
+.lk-progress { --lk-slide-dir: 1; height: var(--track-h); border-radius: var(--radius-pill); background: var(--bg-inset); overflow: hidden; }
+/* 由右至左時進度條排在右邊，不確定狀態的滑動也要反過來，才會從起點滑向終點 */
+.lk-progress:dir(rtl) { --lk-slide-dir: -1; }
 .lk-progress__bar { height: 100%; border-radius: var(--radius-pill); background: var(--brand); transition: width 200ms ease-out; }
 .lk-progress--success .lk-progress__bar { background: var(--success); }
-.lk-progress--indeterminate .lk-progress__bar { width: 40%; animation: lk-slide 1.4s ease-in-out infinite; }
-@keyframes lk-slide { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+.lk-progress--indeterminate .lk-progress__bar {
+  width: 40%; animation: lk-slide 1.4s ease-in-out infinite;
+  /* 減少動態時不左右滑，改成整條原地明暗起伏，仍看得出還在進行 */
+  @media (prefers-reduced-motion: reduce) { width: 100%; animation: lk-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes lk-slide {
+  from { translate: calc(-110% * var(--lk-slide-dir)); }
+  to { translate: calc(260% * var(--lk-slide-dir)); }
+}
 .lk-spinner {
   width: var(--icon-lg); height: var(--icon-lg); border-radius: var(--radius-pill);
   border: 2px solid var(--bg-inset); border-top-color: var(--brand);
   animation: lk-spin 800ms linear infinite;
+  /* 減少動態時放慢而不是停掉，使用者才知道還在跑 */
+  @media (prefers-reduced-motion: reduce) { animation-duration: 2s; }
 }
-@keyframes lk-spin { to { transform: rotate(360deg); } }
+@keyframes lk-spin { to { rotate: 1turn; } }
 .lk-skeleton { background: var(--bg-subtle); border-radius: var(--radius-sm); height: 1em; }
 .lk-skeleton--title { height: 20px; width: 60%; }
 .lk-skeleton--line { height: 14px; }
 .lk-skeleton--circle { width: 40px; height: 40px; border-radius: var(--radius-pill); }
 @keyframes lk-pulse { from, to { opacity: 0.35; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .lk-progress--indeterminate .lk-progress__bar { width: 100%; transform: none; animation: lk-pulse 1.6s ease-in-out infinite; }
-  .lk-spinner { animation-duration: 2s; }
-}
 .lk-toggle--full { width: 100%; justify-content: space-between; }
 
 /* ---------- Checkbox / Radio（.lk-choice 共用） ---------- */
@@ -520,6 +537,8 @@
 .lk-banner > svg { width: var(--icon-md); height: var(--icon-md); flex: none; margin-top: 1px; }
 .lk-banner__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--spacing-4); min-width: 0; }
 .lk-banner__title, .lk-banner__text { margin: 0; color: currentColor; }
+.lk-banner__title { text-wrap: balance; }
+.lk-banner__text { text-wrap: pretty; }
 .lk-banner__actions { display: flex; gap: var(--spacing-8); margin-top: var(--spacing-4); }
 .lk-banner__actions .lk-btn--plain { color: currentColor; text-decoration: underline; }
 .lk-banner--info { background: var(--brand-subtle); color: var(--brand-ink); }
@@ -545,25 +564,29 @@
 .lk-slider-out { flex: none; min-width: 72px; text-align: end; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .lk-slider {
   --lk-pct: 50%;
+  --lk-fill: var(--brand);
+  /* WebKit 的已填段落是軌道上的漸層，方向是實體的，由右至左時要反過來 */
+  --lk-fill-dir: to right;
   -webkit-appearance: none; appearance: none;
   flex: 1 1 auto; width: 100%; height: var(--control-h-md);
-  background: transparent; cursor: pointer;
+  margin: 0; background: transparent; cursor: pointer;
+  &:dir(rtl) { --lk-fill-dir: to left; }
 }
 .lk-slider::-webkit-slider-runnable-track {
   height: var(--track-h); border-radius: var(--radius-pill);
-  background: linear-gradient(to right, var(--brand) 0 var(--lk-pct), var(--bg-inset) var(--lk-pct) 100%);
+  background: linear-gradient(var(--lk-fill-dir), var(--lk-fill) 0 var(--lk-pct), var(--bg-inset) var(--lk-pct) 100%);
 }
 .lk-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: var(--slider-thumb); height: var(--slider-thumb);
-  margin-top: calc((var(--track-h) - var(--slider-thumb)) / 2);
+  margin-block-start: calc((var(--track-h) - var(--slider-thumb)) / 2);
   border-radius: var(--radius-pill);
   background: var(--bg-surface);
   border: var(--hairline) solid var(--border-control);
   box-shadow: var(--shadow-sm);
 }
 .lk-slider::-moz-range-track { height: var(--track-h); border-radius: var(--radius-pill); background: var(--bg-inset); }
-.lk-slider::-moz-range-progress { height: var(--track-h); border-radius: var(--radius-pill); background: var(--brand); }
+.lk-slider::-moz-range-progress { height: var(--track-h); border-radius: var(--radius-pill); background: var(--lk-fill); }
 .lk-slider::-moz-range-thumb {
   width: var(--slider-thumb); height: var(--slider-thumb); border-radius: var(--radius-pill);
   background: var(--bg-surface); border: var(--hairline) solid var(--border-control); box-shadow: var(--shadow-sm);
@@ -572,8 +595,7 @@
 .lk-slider:focus-visible::-webkit-slider-thumb { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
 .lk-slider:focus-visible::-moz-range-thumb { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
 .lk-slider[disabled] { opacity: var(--opacity-disabled); pointer-events: none; }
-.lk-slider--success::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--success) 0 var(--lk-pct), var(--bg-inset) var(--lk-pct) 100%); }
-.lk-slider--success::-moz-range-progress { background: var(--success); }
+.lk-slider--success { --lk-fill: var(--success); }
 
 /* ---------- Table（Web 為主；行動端改用 ListRow） ---------- */
 .lk-table-wrap {
@@ -581,7 +603,10 @@
   border: var(--hairline) solid var(--border-subtle);
   border-radius: var(--radius-lg);
 }
-.lk-table { width: 100%; border-collapse: collapse; font-family: var(--font-sans); }
+/* 有 caption 時外層可以聚焦，讓鍵盤使用者能橫向捲動 */
+.lk-table-wrap:focus-visible { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
+/* separate 而不是 collapse：collapse 的框線屬於整張表，sticky 表頭捲動時底線不會跟著走 */
+.lk-table { width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-sans); }
 .lk-table caption { padding: var(--spacing-12) var(--spacing-16); text-align: start; color: var(--text-secondary); }
 .lk-table th {
   text-align: start; white-space: nowrap;
@@ -590,11 +615,9 @@
   border-bottom: var(--hairline) solid var(--border-subtle);
 }
 .lk-table th[aria-sort] { color: var(--text-primary); }
-.lk-table td {
-  padding: var(--spacing-12) var(--spacing-16); color: var(--text-primary);
-  border-bottom: var(--hairline) solid var(--border-subtle);
-}
-.lk-table tbody tr:last-child td { border-bottom: 0; }
+.lk-table td { padding: var(--spacing-12) var(--spacing-16); color: var(--text-primary); }
+/* 分隔線只畫在列與列之間，而不是先畫再把最後一列蓋掉 */
+.lk-table tbody tr:not(:last-child) td { border-bottom: var(--hairline) solid var(--border-subtle); }
 .lk-table tbody tr:hover td { background: var(--bg-subtle); }
 .lk-table__num { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lk-table__sort {
@@ -604,7 +627,7 @@
 .lk-table__sort > svg { width: var(--icon-sm); height: var(--icon-sm); opacity: 0.5; }
 .lk-table th[aria-sort] .lk-table__sort > svg { opacity: 1; }
 .lk-table__sort:focus-visible { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
-.lk-table--sticky thead th { position: sticky; top: 0; z-index: 1; }
+.lk-table--sticky thead th { position: sticky; inset-block-start: 0; z-index: 1; }
 
 /* ---------- Tip（功能發現提示） ---------- */
 .lk-menu[hidden] { display: none; }
@@ -620,13 +643,13 @@
 .lk-tip[hidden] { display: none; }
 .lk-tip > svg { width: var(--icon-md); height: var(--icon-md); flex: none; margin-top: 1px; color: var(--brand); }
 .lk-tip__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--spacing-4); min-width: 0; }
-.lk-tip__title { margin: 0; color: var(--text-primary); }
-.lk-tip__text { margin: 0; color: var(--text-secondary); }
+.lk-tip__title { margin: 0; color: var(--text-primary); text-wrap: balance; }
+.lk-tip__text { margin: 0; color: var(--text-secondary); text-wrap: pretty; }
 .lk-tip__actions { display: flex; gap: var(--spacing-8); margin-top: var(--spacing-8); }
 .lk-tip__close {
   flex: none; border: 0; background: transparent; cursor: pointer;
   color: var(--text-tertiary); padding: var(--spacing-4); border-radius: var(--radius-sm);
-  margin: calc(var(--spacing-4) * -1) calc(var(--spacing-4) * -1) 0 0;
+  margin-block-start: calc(var(--spacing-4) * -1); margin-inline-end: calc(var(--spacing-4) * -1);
 }
 .lk-tip__close > svg { width: var(--icon-sm); height: var(--icon-sm); display: block; }
 .lk-tip__close:focus-visible { outline: var(--focus-ring-w) solid var(--border-focus); outline-offset: var(--focus-ring-offset); }
@@ -640,9 +663,50 @@
   border: var(--hairline) solid var(--border-default);
   transform: rotate(45deg);
 }
+/* 箭頭是轉 45 度的方塊，留下哪兩條邊決定它指向哪裡。旋轉是實體方向，所以拿掉的邊也用實體屬性，
+   由右至左時才不會變成指向側邊；位置則跟著 inline-start 走。 */
 .lk-tip--anchored[data-arrow="top"] .lk-tip__arrow {
-  top: -7px; inset-inline-start: var(--spacing-24); border-bottom: 0; border-inline-end: 0;
+  top: -7px; inset-inline-start: var(--spacing-24); border-bottom: 0; border-right: 0;
 }
 .lk-tip--anchored[data-arrow="bottom"] .lk-tip__arrow {
-  bottom: -7px; inset-inline-start: var(--spacing-24); border-top: 0; border-inline-start: 0;
+  bottom: -7px; inset-inline-start: var(--spacing-24); border-top: 0; border-left: 0;
+}
+
+/* ---------- 強制色彩模式（Windows 高對比） ----------
+   瀏覽器會把作者色換成使用者的系統色，並拿掉 box-shadow 與背景漸層；作者寫的系統色則會保留。
+   只靠底色、陰影或漸層表達的邊界與狀態，在這裡改用系統色補回來，否則選取、勾選與進度會完全看不出來。 */
+@media (forced-colors: active) {
+  /* 浮層與提示原本靠陰影和底色跟頁面分開 */
+  .lk-dialog, .lk-sheet, .lk-toast, .lk-banner { outline: var(--hairline) solid CanvasText; }
+
+  /* 只靠底色表達的選取狀態，改用系統的選取色。
+     已選又可點的列，hover／按下的底色規則比 .lk-row--selected 具體，要一併蓋過，否則文字會變成 HighlightText 疊在系統底色上 */
+  .lk-seg__item[aria-selected="true"],
+  .lk-chip[aria-pressed="true"],
+  .lk-row--selected,
+  .lk-row--selected:is(:hover, :active),
+  .lk-menu__item[aria-selected="true"] { background: Highlight; color: HighlightText; }
+  .lk-chip[aria-pressed="true"] .lk-chip__remove,
+  .lk-row--selected :is(.lk-row__title, .lk-row__sub, .lk-row__trail, .lk-row__lead, .lk-row__chevron) { color: inherit; }
+  .lk-tabbar__item[aria-current="page"] { color: Highlight; }
+  .lk-card--selected { border-color: Highlight; }
+
+  /* Toggle：把手原本是白底加陰影，開啟的軌道原本是品牌色底 */
+  .lk-toggle__knob { background: CanvasText; }
+  .lk-toggle[aria-checked="true"] .lk-toggle__track { background: Highlight; border-color: Highlight; }
+  .lk-toggle[aria-checked="true"] .lk-toggle__knob { background: HighlightText; }
+
+  /* Radio 的圓點與部分選取的橫線是用 background 畫的 */
+  .lk-choice__dot, .lk-choice__dash { background: CanvasText; }
+
+  /* 進度與載入：填色原本靠底色，Slider 的已填段落靠背景漸層 */
+  .lk-progress { outline: var(--hairline) solid CanvasText; }
+  /* 用兩個 class 的選擇器，success 變體的填色規則才蓋得過 */
+  .lk-progress .lk-progress__bar { background: Highlight; }
+  .lk-spinner { border-color: Canvas; border-top-color: CanvasText; }
+  .lk-skeleton { background: GrayText; }
+  .lk-slider::-webkit-slider-runnable-track { background: GrayText; }
+  .lk-slider::-moz-range-track { background: GrayText; }
+  .lk-slider::-moz-range-progress { background: Highlight; }
+  .lk-stepper__btn[disabled] { color: GrayText; }
 }
