@@ -1,4 +1,4 @@
-import { h, cx, icon, uid, focusgroup, rove, type Attrs, type Child, type LKGlyph } from './dom.js';
+import { h, cx, icon, uid, focusgroup, rove, reveal, type Attrs, type Child, type LKGlyph } from './dom.js';
 
 /* ---------------------------------- Button --------------------------------- */
 
@@ -401,7 +401,10 @@ export function ChoiceGroup(options: ChoiceGroupOptions): HTMLDivElement {
       axis: 'both',
       items: radios,
       current: () => radios().find((radio) => radio.getAttribute('aria-checked') === 'true'),
-      onMove: (radio) => radio.click(),
+      // 在已選的第一項按 Home、最後一項按 End，或群組只有一項時，焦點落回已選的那一項，不要再回報一次
+      onMove: (radio) => {
+        if (radio.getAttribute('aria-checked') !== 'true') radio.click();
+      },
     });
     // 子項的 click 先更新 aria-checked，冒泡到這裡再把 Tab 停駐點移到新選的那一項
     root.addEventListener('click', sync);
@@ -473,7 +476,9 @@ export interface SegmentedControlOptions {
  * Tabs 與 SegmentedControl 共用的 tablist 行為。
  *
  * 整組只佔一個 Tab 停駐點，左右鍵與 Home／End 在 tab 之間移動，選取跟著焦點走
- * （與原生 radio 群組一致，少按一次鍵）。點擊或聚焦已選的那一項不會再回報一次。
+ * （與原生 radio 群組一致，少按一次鍵）。點擊已選的那一項不會再回報一次。
+ *
+ * 呼叫端可以直接改某個 tab 的 `aria-selected` 來切換（例如路由變了），Tab 停駐點會跟著移過去。
  */
 function tablist(root: HTMLElement, tabs: HTMLButtonElement[], onChange?: (value: string) => void): void {
   const selected = (): HTMLButtonElement | undefined =>
@@ -490,14 +495,38 @@ function tablist(root: HTMLElement, tabs: HTMLButtonElement[], onChange?: (value
     for (const peer of tabs) peer.setAttribute('aria-selected', String(peer === tab));
     sync();
     // tab 列可以橫向捲動；只捲 tab 列本身，不要連頁面一起捲
-    tab.scrollIntoView?.({ block: 'nearest', inline: 'nearest', container: 'nearest' } as ScrollIntoViewOptions);
+    reveal(root, tab);
     onChange?.(tab.dataset.value ?? '');
   };
 
+  // 選取只跟著「方向鍵造成的」焦點移動走。從外面 Tab 進來、呼叫端自己 focus()、
+  // 按下滑鼠後拖走取消點擊，都不該改變選取；滑鼠點擊交給 click。
+  // 用 capture：退路的 rove() 在同一個 keydown 裡就移動焦點，要趕在它之前記下來
+  let pointing = false;
+  root.addEventListener('pointerdown', () => { pointing = true; }, true);
+  root.addEventListener('keydown', () => { pointing = false; }, true);
+
   for (const tab of tabs) {
     tab.addEventListener('click', () => select(tab));
-    tab.addEventListener('focus', () => select(tab));
+    tab.addEventListener('focus', (event) => {
+      if (!pointing && tabs.includes(event.relatedTarget as HTMLButtonElement)) select(tab);
+    });
   }
+
+  // 焦點在群組內時不搬停駐點：退路的 tabindex 一搬，Tab 可能落到同組的下一個 tab 而離不開。
+  // 等焦點離開再依 aria-selected 重新分配
+  const focusInside = (): boolean =>
+    root.contains((root.getRootNode() as Document | ShadowRoot).activeElement);
+  // 從元件所在的 window 取，宿主環境不一定把它掛在全域上
+  const Observer = root.ownerDocument.defaultView?.MutationObserver;
+  if (Observer) {
+    new Observer(() => {
+      if (!focusInside()) sync();
+    }).observe(root, { subtree: true, attributeFilter: ['aria-selected'] });
+  }
+  root.addEventListener('focusout', (event) => {
+    if (!root.contains(event.relatedTarget as Node | null)) sync();
+  });
 }
 
 /** 在少數幾個互斥的檢視或篩選條件之間切換。切換後立即生效，不需要「套用」。 */
@@ -1230,8 +1259,9 @@ export interface TableOptions {
   /**
    * 這張表在說什麼，會被閱讀器唸出來。
    *
-   * 同時拿來命名外層的捲動區：有 caption 時外層是 `role="region"` 且可以聚焦，
-   * 表格比容器寬的時候，只用鍵盤的使用者也能用方向鍵橫向捲動。
+   * 同時拿來命名外層的捲動區：有 caption 且表格比容器寬（或比限制的高度高）時，
+   * 外層變成 `role="region"` 並且可以聚焦，只用鍵盤的使用者也能用方向鍵捲動。
+   * 放得下的表格不加，免得多一個沒作用的 Tab 停駐點，閱讀器也不會把 caption 唸兩次。
    */
   caption?: string;
   /**
@@ -1285,22 +1315,47 @@ export function Table(options: TableOptions): HTMLDivElement {
   );
 
   const captionId = options.caption ? uid('lk-table-caption') : undefined;
-  return h(
-    'div',
-    {
-      class: cx('lk-table-wrap', options.class),
-      role: captionId ? 'region' : undefined,
-      'aria-labelledby': captionId,
-      tabindex: captionId ? '0' : undefined,
-    } as Attrs,
-    [
-      h('table', { class: cx('lk-table', options.sticky && 'lk-table--sticky') }, [
-        options.caption ? h('caption', { id: captionId, class: 'footnote', text: options.caption }) : null,
-        h('thead', null, [head]),
-        h('tbody', null, body),
-      ]),
-    ],
-  );
+  const table = h('table', { class: cx('lk-table', options.sticky && 'lk-table--sticky') }, [
+    options.caption ? h('caption', { id: captionId, class: 'footnote', text: options.caption }) : null,
+    h('thead', null, [head]),
+    h('tbody', null, body),
+  ]);
+  const wrap = h('div', { class: cx('lk-table-wrap', options.class) }, [table]);
+  if (captionId) scrollRegion(wrap, table, captionId);
+  return wrap;
+}
+
+/**
+ * 外層真的需要捲動時才變成以 caption 命名、可聚焦的 region。
+ *
+ * 一開始先當成需要：量不到尺寸的環境（沒有 ResizeObserver）寧可多一個停駐點，也不要讓鍵盤捲不到。
+ */
+function scrollRegion(wrap: HTMLElement, table: HTMLElement, captionId: string): void {
+  const update = (scrollable: boolean): void => {
+    if (scrollable) {
+      wrap.setAttribute('role', 'region');
+      wrap.setAttribute('aria-labelledby', captionId);
+      wrap.tabIndex = 0;
+      return;
+    }
+    // 正聚焦在外層時拿掉 tabindex 會讓焦點掉回 body，等它失焦再說
+    if ((wrap.getRootNode() as Document | ShadowRoot).activeElement === wrap) return;
+    wrap.removeAttribute('role');
+    wrap.removeAttribute('aria-labelledby');
+    wrap.removeAttribute('tabindex');
+  };
+  update(true);
+
+  const Observer = wrap.ownerDocument.defaultView?.ResizeObserver;
+  if (!Observer) return;
+  const check = (): void =>
+    update(wrap.scrollWidth > wrap.clientWidth || wrap.scrollHeight > wrap.clientHeight);
+  // 外層變窄或表格內容變寬都會改變是否溢出，兩個都要看
+  const observer = new Observer(check);
+  observer.observe(wrap);
+  observer.observe(table);
+  // 聚焦時不能拿掉的停駐點，失焦後補量一次，不必等下一次尺寸變化
+  wrap.addEventListener('blur', check);
 }
 
 /* ---------------------------------- Slider --------------------------------- */
@@ -1558,7 +1613,7 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
     const row = all[active];
     if (row) {
       input.setAttribute('aria-activedescendant', row.id);
-      row.scrollIntoView?.({ block: 'nearest' });
+      reveal(panel, row);
     } else {
       input.removeAttribute('aria-activedescendant');
     }
@@ -1628,7 +1683,14 @@ export function Combobox(options: ComboboxOptions): HTMLDivElement {
     open();
   });
   input.addEventListener('keydown', (event) => {
+    // 注音、倉頡等輸入法選字時，Esc、Enter、方向鍵都是給輸入法用的
+    if (event.isComposing) return;
     if (event.key === 'Escape') {
+      // 面板開著時這次 Esc 只收面板：攔下原生 dialog 的關閉請求，也不讓外層的 keydown 收到。
+      // 面板已經收起時照常放行，再按一次 Esc 才關掉外層的 Dialog 或 Sheet
+      if (panel.hidden) return;
+      event.preventDefault();
+      event.stopPropagation();
       close();
       return;
     }

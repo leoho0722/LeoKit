@@ -929,6 +929,178 @@ test('瀏覽器原生支援 focusgroup 時交給瀏覽器，但 role 仍寫在 D
   }
 });
 
+test('瀏覽器有 focusGroup 但 supports() 丟例外時，元件照樣建得出來並改走退路', () => {
+  Object.defineProperty(window.HTMLElement.prototype, 'focusGroup', {
+    configurable: true,
+    get: () => ({ supports: () => { throw new window.TypeError('沒有定義可用的 token'); } }),
+  });
+  try {
+    const tabs = Tabs({ items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }] });
+    assert.equal(tabs.getAttribute('focusgroup'), null);
+    assert.deepEqual(Array.from(tabs.children, (t) => t.tabIndex), [0, -1], '退路的 roving tabindex 接手');
+    const menu = Menu({ items: [{ label: '編輯' }] });
+    assert.equal(menu.getAttribute('focusgroup'), null);
+  } finally {
+    delete window.HTMLElement.prototype.focusGroup;
+  }
+});
+
+test('Tabs 從外面把焦點移進來不會改變選取；呼叫端改了 aria-selected，停駐點也跟著移', async () => {
+  const seen = [];
+  const before = document.createElement('button');
+  const tabs = Tabs({
+    value: 'a',
+    items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }, { label: 'C', value: 'c' }],
+    onChange: (v) => seen.push(v),
+  });
+  document.body.append(before, tabs);
+  const [a, b, c] = tabs.children;
+
+  // 例如路由變了，呼叫端直接切到 B
+  a.setAttribute('aria-selected', 'false');
+  b.setAttribute('aria-selected', 'true');
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.deepEqual(Array.from(tabs.children, (t) => t.tabIndex), [-1, 0, -1], 'Tab 進來要落在新選的 B');
+
+  before.focus();
+  b.focus();
+  before.focus();
+  c.focus();
+  assert.deepEqual(seen, [], '從外面進來（Tab 或程式呼叫 focus()）都不算切換');
+  assert.equal(c.getAttribute('aria-selected'), 'false');
+  before.remove();
+  tabs.remove();
+});
+
+test('Tabs 按下滑鼠讓焦點移過去、但沒有完成點擊時不改變選取，之後方向鍵照常', () => {
+  const seen = [];
+  const tabs = Tabs({ items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }], onChange: (v) => seen.push(v) });
+  document.body.appendChild(tabs);
+  const [a, b] = tabs.children;
+  a.focus();
+  // Chromium 在 mousedown 就把焦點給按鈕，使用者拖走放開就不會有 click
+  b.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+  b.focus();
+  assert.deepEqual(seen, []);
+  assert.equal(a.getAttribute('aria-selected'), 'true');
+
+  key(b, 'ArrowLeft');
+  assert.equal(document.activeElement, a);
+  key(a, 'ArrowRight');
+  assert.deepEqual(seen, ['b'], '按過鍵之後選取又跟著焦點走');
+  tabs.remove();
+});
+
+test('Radio 群組在已選的第一項按 Home、最後一項按 End 時不重複回報', () => {
+  const picked = [];
+  const group = ChoiceGroup({
+    radio: true,
+    ariaLabel: '付款週期',
+    children: [
+      Radio({ label: '月繳', value: 'monthly', checked: true, onChange: (v) => picked.push(v) }),
+      Radio({ label: '年繳', value: 'yearly', onChange: (v) => picked.push(v) }),
+    ],
+  });
+  document.body.appendChild(group);
+  const [monthly, yearly] = group.querySelectorAll('.lk-choice--radio');
+  monthly.focus();
+  key(monthly, 'Home');
+  assert.deepEqual(picked, []);
+  key(monthly, 'End');
+  key(yearly, 'End');
+  assert.deepEqual(picked, ['yearly']);
+  group.remove();
+});
+
+/** 替 jsdom 補上版面尺寸。jsdom 不排版，矩形與 client 尺寸預設都是 0。 */
+function layout(element, rect, client) {
+  element.getBoundingClientRect = () => rect;
+  for (const [name, value] of Object.entries(client ?? {})) {
+    Object.defineProperty(element, name, { configurable: true, value });
+  }
+  let top = 0;
+  let left = 0;
+  Object.defineProperty(element, 'scrollTop', { configurable: true, get: () => top, set: (v) => { top = v; } });
+  Object.defineProperty(element, 'scrollLeft', { configurable: true, get: () => left, set: (v) => { left = v; } });
+}
+
+test('Tabs 切換時只捲 tab 列本身，不用會連頁面一起捲的 scrollIntoView', () => {
+  const tabs = Tabs({ items: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }] });
+  document.body.appendChild(tabs);
+  const [, b] = tabs.children;
+  let pageScrolled = false;
+  b.scrollIntoView = () => { pageScrolled = true; };
+  layout(tabs, { top: 0, bottom: 40, left: 0, right: 100 }, { clientWidth: 100, clientHeight: 40 });
+  layout(b, { top: 0, bottom: 40, left: 90, right: 150 });
+
+  b.dispatchEvent(new window.MouseEvent('click'));
+  assert.equal(tabs.scrollLeft, 50, '往右捲到 B 的右緣剛好露出');
+  assert.equal(tabs.scrollTop, 0);
+  assert.equal(pageScrolled, false);
+  tabs.remove();
+});
+
+test('Combobox 方向鍵移到看不到的選項時只捲面板本身', () => {
+  const field = Combobox({ options: [{ label: 'Netflix', value: 'n' }, { label: 'Spotify', value: 's' }] });
+  document.body.appendChild(field);
+  const input = field.querySelector('input[role="combobox"]');
+  const panel = field.querySelector('[role="listbox"]');
+  input.dispatchEvent(new window.Event('focus'));
+  layout(panel, { top: 100, bottom: 140, left: 0, right: 200 }, { clientWidth: 200, clientHeight: 40 });
+  const [first, second] = panel.querySelectorAll('[role="option"]');
+  let pageScrolled = false;
+  for (const row of [first, second]) row.scrollIntoView = () => { pageScrolled = true; };
+  layout(first, { top: 100, bottom: 140, left: 0, right: 200 });
+  layout(second, { top: 140, bottom: 180, left: 0, right: 200 });
+
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown' }));
+  assert.equal(panel.scrollTop, 0, '第一項已經看得到');
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown' }));
+  assert.equal(panel.scrollTop, 40);
+  assert.equal(pageScrolled, false);
+  field.remove();
+});
+
+test('Table 有 caption 但放得下時不是 region、不進 Tab 順序；溢出時才加上', () => {
+  let measure;
+  const observed = [];
+  window.ResizeObserver = class {
+    constructor(callback) { measure = callback; }
+    observe(element) { observed.push(element); }
+  };
+  try {
+    const wrap = Table({ caption: '本月訂閱', columns: [{ key: 'a', label: 'A' }], rows: [] });
+    document.body.appendChild(wrap);
+    assert.ok(observed.includes(wrap) && observed.includes(wrap.querySelector('table')), '外層與表格的尺寸都要看');
+    const size = (scrollWidth) => {
+      for (const [name, value] of Object.entries({ scrollWidth, clientWidth: 300, scrollHeight: 0, clientHeight: 0 })) {
+        Object.defineProperty(wrap, name, { configurable: true, value });
+      }
+      measure();
+    };
+
+    size(300);
+    assert.equal(wrap.getAttribute('role'), null, '不用捲動就不需要具名的捲動區，閱讀器也不會把 caption 唸兩次');
+    assert.equal(wrap.getAttribute('tabindex'), null);
+    assert.equal(wrap.getAttribute('aria-labelledby'), null);
+
+    size(480);
+    assert.equal(wrap.getAttribute('role'), 'region');
+    assert.equal(wrap.getAttribute('tabindex'), '0');
+    assert.equal(wrap.getAttribute('aria-labelledby'), wrap.querySelector('caption').id);
+
+    wrap.focus();
+    size(300);
+    assert.equal(wrap.getAttribute('tabindex'), '0', '正聚焦在上面時不拿掉，焦點才不會掉回 body');
+    wrap.blur();
+    assert.equal(wrap.getAttribute('tabindex'), null, '失焦後補量一次，不必等下一次尺寸變化');
+    assert.equal(wrap.getAttribute('role'), null);
+    wrap.remove();
+  } finally {
+    delete window.ResizeObserver;
+  }
+});
+
 test('leokit.css 不用 CSS nesting，減少動態與由右至左的覆寫在不支援 nesting 的瀏覽器也生效', () => {
   const css = readFileSync(new URL('../dist/leokit.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const stack = [];
@@ -950,4 +1122,51 @@ test('leokit.css 不用 CSS nesting，減少動態與由右至左的覆寫在不
     }
   }
   assert.deepEqual(nested, []);
+});
+
+test('Combobox 在 Dialog 裡按 Esc：面板開著時只收面板，收起後再按才交給 Dialog', () => {
+  const field = Combobox({ options: [{ label: 'Netflix', value: 'netflix' }] });
+  const dialog = Dialog({ title: '新增訂閱', actions: [] });
+  dialog.appendChild(field);
+  document.body.appendChild(dialog);
+  let dialogClosed = 0;
+  // 呼叫端自己處理 Esc 的 Dialog
+  dialog.addEventListener('keydown', (event) => { if (event.key === 'Escape') dialogClosed += 1; });
+  const input = field.querySelector('input[role="combobox"]');
+  const panel = field.querySelector('[role="listbox"]');
+  const esc = () => {
+    const event = new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    input.dispatchEvent(event);
+    return event;
+  };
+
+  input.dispatchEvent(new window.Event('focus'));
+  const first = esc();
+  assert.equal(panel.hidden, true);
+  assert.equal(dialogClosed, 0, '外層收不到這次 Esc');
+  assert.equal(first.defaultPrevented, true, '原生 dialog 也不會因為這次 Esc 關閉');
+
+  const second = esc();
+  assert.equal(dialogClosed, 1, '面板已經收起，Esc 照常交給 Dialog');
+  assert.equal(second.defaultPrevented, false);
+  dialog.remove();
+});
+
+test('Combobox 在輸入法選字時不攔 Enter 與 Esc', () => {
+  const picked = [];
+  const field = Combobox({ options: [{ label: 'Netflix', value: 'netflix' }], onChange: (v) => picked.push(v) });
+  document.body.appendChild(field);
+  const input = field.querySelector('input[role="combobox"]');
+  const panel = field.querySelector('[role="listbox"]');
+  input.dispatchEvent(new window.Event('focus'));
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown' }));
+
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', isComposing: true }));
+  assert.deepEqual(picked, [], 'Enter 是在確認選字，不是選這個選項');
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', isComposing: true }));
+  assert.equal(panel.hidden, false, 'Esc 是在取消選字，面板不收');
+
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter' }));
+  assert.deepEqual(picked, ['netflix']);
+  field.remove();
 });
