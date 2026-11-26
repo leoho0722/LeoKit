@@ -176,11 +176,17 @@ export type FocusgroupBehavior = 'tablist' | 'menu';
  * 瀏覽器是否原生支援這種 focusgroup。目前只有 Chromium 系列。
  *
  * 只看屬性存在不夠：實作可能有 `focusGroup` 卻還不支援某個 behavior，所以再問 `supports()`。
+ * 沒定義可用 token 的 DOMTokenList 呼叫 `supports()` 會丟 TypeError（跟 `classList.supports()` 一樣），
+ * 半成品或旗標後的實作可能就是這樣，所以任何例外都當成不支援，改走 `rove()`。
  */
 export function hasNativeFocusgroup(behavior: FocusgroupBehavior): boolean {
   if (!('focusGroup' in HTMLElement.prototype)) return false;
-  const tokens = (document.createElement('div') as HTMLElement & { focusGroup?: DOMTokenList }).focusGroup;
-  return tokens?.supports?.(behavior) === true;
+  try {
+    const tokens = (document.createElement('div') as HTMLElement & { focusGroup?: DOMTokenList }).focusGroup;
+    return tokens?.supports?.(behavior) === true;
+  } catch {
+    return false;
+  }
 }
 
 /** 原生 focusgroup 只負責移動焦點，所以這裡不收 `onMove`；`axis` 也只給退路用，原生的軸由 behavior 決定。 */
@@ -220,6 +226,27 @@ export function focusgroup(
     return sync;
   }
   return rove(container, options);
+}
+
+/**
+ * 捲動 `scroller` 讓 `item` 完整露出，只捲它自己。
+ *
+ * `scrollIntoView()` 會連所有可捲動的祖先（包括頁面）一起捲；能限制範圍的 `container` 選項
+ * 目前只有新版 Chromium 認得，其他瀏覽器會忽略，所以自己算位移。
+ */
+export function reveal(scroller: HTMLElement, item: HTMLElement): void {
+  const outer = scroller.getBoundingClientRect();
+  const inner = item.getBoundingClientRect();
+  // 可見範圍要扣掉邊框；clientWidth／clientHeight 已經不含捲軸
+  const top = outer.top + scroller.clientTop;
+  const left = outer.left + scroller.clientLeft;
+  const bottom = top + scroller.clientHeight;
+  const right = left + scroller.clientWidth;
+  // 用差值調整，不用絕對位置：由右至左時 scrollLeft 是負的，差值的方向不受影響
+  if (inner.top < top) scroller.scrollTop -= top - inner.top;
+  else if (inner.bottom > bottom) scroller.scrollTop += inner.bottom - bottom;
+  if (inner.left < left) scroller.scrollLeft -= left - inner.left;
+  else if (inner.right > right) scroller.scrollLeft += inner.right - right;
 }
 
 /** 切換 documentElement 的 data-theme，值為 tokens.json 的 theme id。 */
